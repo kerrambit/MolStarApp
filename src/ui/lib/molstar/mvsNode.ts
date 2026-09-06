@@ -135,6 +135,14 @@ export function applyBackgroundColorToNode(
     return nodeCopy;
 }
 
+/**
+ * Replaces a download node in the root node's children with a new node, based on the asset ID.
+ * It makes sure that other nodes (such as camera nodes) in the root node's children remain unchanged.
+ * @param rootNode root node
+ * @param assetId asset ID of the download node to be replaced
+ * @param newNode new node to replace the download node
+ * @returns modified root node with the download node replaced
+ */
 export const replaceAssetNodeInRoot = (
     rootNode: any,
     assetId: string,
@@ -352,18 +360,7 @@ export function replaceNodeIdsWithRelativePaths(
 
 /**
  * Builds a full `download` node (download -> parse -> structure -> ...) from
- * a StructureViewModel using the real MVS builder.
- *
- * Two deviations from the originally-sketched version, both because the real
- * builder doesn't support what was written:
- * - `parsed.structure(params)` doesn't exist — `Parse` only exposes
- *   `.modelStructure()` / `.assemblyStructure()` / `.symmetryStructure()` /
- *   `.symmetryMatesStructure()`, so we dispatch on `viewModel.type`.
- * - `componentNode.tooltipFromUri()` / `.labelFromUri()` don't exist —
- *   `Component` only has inline `.tooltip()`/`.label()`. The annotation-driven
- *   variants only exist on `Structure` (handled below via
- *   `viewModel.tooltip_from_uri` etc., not per-component).
- *
+ * a StructureViewModel.
  * @param assetId used as the download node's `url`
  * @param viewModel fully-resolved structure view model
  * @returns the built `download` node, ready to splice into a hand-maintained tree
@@ -373,18 +370,14 @@ export function getStructureNode(
     viewModel: StructureViewModel,
 ): any {
     const builder = createMVSBuilder();
-
-    // Root & Data Source.
     const downloaded = builder.download({ url: assetId });
     const parsed = downloaded.parse({ format: viewModel.format as any });
 
-    // Structure Node — dispatch to the type-specific builder method, since
-    // Parse has no generic `.structure()`.
     const baseStructureParams = {
-        block_header: viewModel.block_header ?? undefined,
+        block_header: viewModel.block_header,
         block_index: viewModel.block_index,
         model_index: viewModel.model_index,
-        coordinates_ref: viewModel.coordinates_ref ?? undefined,
+        coordinates_ref: viewModel.coordinates_ref,
     };
 
     const structureNode = (() => {
@@ -411,7 +404,6 @@ export function getStructureNode(
         }
     })();
 
-    // Structure-level Transform
     const hasStructureTransform =
         viewModel.translationX !== 0 ||
         viewModel.translationY !== 0 ||
@@ -435,8 +427,6 @@ export function getStructureNode(
         });
     }
 
-    // Structure-level annotation-driven label/tooltip (the *_from_uri/*_from_source
-    // variants — these are the ones that actually exist at this level).
     if (viewModel.label_from_uri)
         structureNode.labelFromUri(viewModel.label_from_uri);
     if (viewModel.label_from_source)
@@ -444,16 +434,13 @@ export function getStructureNode(
     if (viewModel.tooltip_from_uri)
         structureNode.tooltipFromUri(viewModel.tooltip_from_uri);
     if (viewModel.tooltip_from_source)
-        structureNode.tooltipFromSource(viewModel.tooltip_from_source as never);
+        structureNode.tooltipFromSource(viewModel.tooltip_from_source);
 
-    // 4. Components & Annotations
     viewModel.components.forEach((comp: ComponentEntry) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const componentNode = structureNode.component({
             selector: comp.selector as any,
         });
 
-        // Component-level transform
         const hasComponentTransform =
             comp.translationX !== 0 ||
             comp.translationY !== 0 ||
@@ -484,7 +471,6 @@ export function getStructureNode(
             });
         }
 
-        // Representation
         const repParams: Record<string, unknown> = {
             type: comp.representationType,
             size_factor: comp.size_factor,
@@ -504,24 +490,19 @@ export function getStructureNode(
         if (comp.representationType === "putty")
             repParams.size_theme = comp.size_theme;
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const representationNode = componentNode.representation(
             repParams as any,
         );
 
-        // Color variants are mutually exclusive in MVS — the UI's selector-type
-        // toggle pattern should ensure only one of these three is ever set.
         if (comp.color_from_source) {
             representationNode.colorFromSource(comp.color_from_source);
         } else if (comp.color_from_uri) {
             representationNode.colorFromUri(comp.color_from_uri);
         } else {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             representationNode.color({ color: comp.color as any });
         }
         representationNode.opacity({ opacity: comp.opacity });
 
-        // Tooltip / Label — inline only, componentNode has no *FromUri/*FromSource.
         if (comp.tooltip) componentNode.tooltip({ text: comp.tooltip });
         if (comp.label) componentNode.label({ text: comp.label });
     });
@@ -530,21 +511,18 @@ export function getStructureNode(
 }
 
 /**
- * Appends a new structure asset to the tree, built via getStructureNode.
+ * Adds a new structure node to the tree, based on the asset ID and view model.
+ * @param rootNode root node
+ * @param assetIdToAdd asset ID of the structure to add
+ * @param viewModel structure view model
+ * @returns updated root node with the new structure node added
  */
 export function addStructureNodeToTree(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     rootNode: any,
     assetIdToAdd: string,
-    extension: string,
-    extensionParserRecord: Record<string, string>,
-    viewModel: Omit<StructureViewModel, "format">,
+    viewModel: StructureViewModel,
 ) {
-    const format = extensionParserRecord[extension] ?? "bcif";
-    const newDownloadNode = getStructureNode(assetIdToAdd, {
-        ...viewModel,
-        format,
-    });
+    const newDownloadNode = getStructureNode(assetIdToAdd, viewModel);
     return {
         ...rootNode,
         children: [...(rootNode.children || []), newDownloadNode],
@@ -554,8 +532,11 @@ export function addStructureNodeToTree(
 /**
  * Builds a full `download` node (download -> parse -> volume -> ...) from a
  * VolumeViewModel, same conditional-transform pattern as structure.
+ *
+ * @param assetId used as the download node's `url`
+ * @param viewModel fully-resolved volume view model
+ * @returns the built `download` node, ready to splice into a hand-maintained tree
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function getVolumeNode(
     assetId: string,
     viewModel: VolumeViewModel,
@@ -563,7 +544,6 @@ export function getVolumeNode(
     const builder = createMVSBuilder();
 
     const downloaded = builder.download({ url: assetId });
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const parsed = downloaded.parse({ format: viewModel.format as any });
     const volumeNode = parsed.volume({});
 
@@ -596,34 +576,40 @@ export function getVolumeNode(
         show_wireframe: viewModel.show_wireframe,
         show_faces: viewModel.show_faces,
     });
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     representationNode.color({ color: viewModel.color as any });
     representationNode.opacity({ opacity: viewModel.opacity });
 
     return builder.getState().root.children?.[0];
 }
 
+/**
+ * Adds a volume node to the existing tree structure.
+ * @param rootNode root node of the tree
+ * @param assetIdToAdd asset ID of the node to add
+ * @param viewModel fully-resolved volume view model
+ * @returns the updated tree with the new volume node added
+ */
 export function addVolumeNodeToTree(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     rootNode: any,
     assetIdToAdd: string,
-    extension: string,
-    extensionParserRecord: Record<string, string>,
-    viewModel: Omit<VolumeViewModel, "format">,
+    viewModel: VolumeViewModel,
 ) {
-    const format = extensionParserRecord[extension] ?? "bcif";
-    const newDownloadNode = getVolumeNode(assetIdToAdd, {
-        ...viewModel,
-        format,
-    });
+    const newDownloadNode = getVolumeNode(assetIdToAdd, viewModel);
     return {
         ...rootNode,
         children: [...(rootNode.children || []), newDownloadNode],
     };
 }
 
-/** Finds the first node of `targetKind` inside the branch belonging to `assetId`. */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+/**
+ * Finds the first node of `targetKind` inside the branch belonging to `assetId`.
+ * @param node node to search
+ * @param assetId asset ID of the branch to search within
+ * @param targetKind kind of the node to find
+ * @param inBranch whether the search is currently within the target branch
+ * @returns the found node or undefined
+ */
 function findNodeInAssetBranch(
     node: any,
     assetId: string,
@@ -649,8 +635,13 @@ function findNodeInAssetBranch(
     return undefined;
 }
 
-/** Reads one ComponentEntry from a `component` node's own direct children only. */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+/**
+ * Reads one ComponentEntry from a `component` node's own direct children only.
+ * @param componentNode component node to read from
+ * @param id component ID
+ * @param defaults default values for the component entry
+ * @returns the read component entry
+ */
 function readComponentEntry(
     componentNode: any,
     id: string,
@@ -737,11 +728,13 @@ function readComponentEntry(
 }
 
 /**
- * Retrieves the current StructureViewModel for a specific asset branch,
- * falling back to `defaultViewModel` for anything not found in the tree.
+ * Retrieves the current StructureViewModel for a specific asset branch.
+ * @param rootNode root node of the MVS tree
+ * @param assetId asset ID of the structure to retrieve the view model for
+ * @param defaultViewModel default StructureViewModel to use as a base for the retrieved view model
+ * @returns the retrieved StructureViewModel or the default one if not found
  */
 export function getStructureViewModel(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     rootNode: any,
     assetId: string,
     defaultViewModel: StructureViewModel,
@@ -804,7 +797,6 @@ export function getStructureViewModel(
     }
 
     const componentNodes = (structureNode.children || []).filter(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (c: any) =>
             c.kind === "component" ||
             c.kind === "component_from_uri" ||
@@ -813,14 +805,12 @@ export function getStructureViewModel(
     if (componentNodes.length > 0) {
         const defaultComponent = defaultViewModel.components[0];
         let componentIdCounter = 0;
-        params.components = componentNodes.map(
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (c: any) =>
-                readComponentEntry(
-                    c,
-                    `component-${componentIdCounter++}`,
-                    defaultComponent,
-                ),
+        params.components = componentNodes.map((c: any) =>
+            readComponentEntry(
+                c,
+                `component-${componentIdCounter++}`,
+                defaultComponent,
+            ),
         );
     }
 
@@ -829,16 +819,18 @@ export function getStructureViewModel(
 
 /**
  * Retrieves the current VolumeViewModel for a specific asset branch.
+ * @param rootNode root node of the MVS tree
+ * @param assetId asset ID of the structure to retrieve the view model for
+ * @param defaultViewModel default VolumeViewModel to use as a base for the retrieved view model
+ * @returns the retrieved VolumeViewModel or the default one if not found
  */
 export function getVolumeViewModel(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     rootNode: any,
     assetId: string,
     defaultViewModel: VolumeViewModel,
 ): VolumeViewModel {
     const params = { ...defaultViewModel };
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     function traverse(node: any, inBranch: boolean) {
         let currentInBranch = inBranch;
         if (node.kind === "download" && node.params?.url === assetId)

@@ -499,9 +499,6 @@ export function useViewBuilder(viewKey: string) {
                                 newRoot = addVolumeNodeToTree(
                                     snap.root,
                                     toggledAssetId,
-                                    getAsset(toggledAssetId)?.extension ||
-                                        "unknown",
-                                    getAllSupportedAssetsParsers(),
                                     volumeModel,
                                 );
                             } else {
@@ -515,9 +512,6 @@ export function useViewBuilder(viewKey: string) {
                                 newRoot = addStructureNodeToTree(
                                     snap.root,
                                     toggledAssetId,
-                                    getAsset(toggledAssetId)?.extension ||
-                                        "unknown",
-                                    getAllSupportedAssetsParsers(),
                                     volumeModel,
                                 );
                             }
