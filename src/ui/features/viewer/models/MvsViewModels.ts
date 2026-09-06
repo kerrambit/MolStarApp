@@ -1,8 +1,9 @@
 /**
- * Selector for a component: a keyword, a single expression, or a list of
- * expressions. Kept permissive/simple since the view model only manages one
- * default component per structure asset.
+ * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ *
+ * @author Marek Eibel
  */
+
 export type PredefinedSelector =
     | "all"
     | "polymer"
@@ -32,20 +33,84 @@ export type Selector =
     | SelectorExpression
     | SelectorExpression[];
 
+export function isPredefinedSelector(
+    selector: Selector,
+): selector is PredefinedSelector {
+    return typeof selector === "string";
+}
+export function isSelectorExpressionList(
+    selector: Selector,
+): selector is SelectorExpression[] {
+    return Array.isArray(selector);
+}
+export function isSingleSelectorExpression(
+    selector: Selector,
+): selector is SelectorExpression {
+    return typeof selector === "object" && !Array.isArray(selector);
+}
+
+export function selectorToString(selector: Selector): string {
+    if (typeof selector === "string") {
+        return selector;
+    }
+    const formatExpression = (expr: SelectorExpression) => {
+        const parts = Object.entries(expr)
+            .filter(([, value]) => value !== undefined)
+            .map(([key, value]) => `${key}: ${value}`);
+        const result = `{ ${parts.join(", ")} }`;
+        return result.length > 24 ? `${result.substring(0, 24)}...` : result;
+    };
+    if (Array.isArray(selector)) {
+        const result = `[ ${selector.map(formatExpression).join(", ")} ]`;
+        return result.length > 5 ? `${result.substring(0, 5)}...` : result;
+    }
+    return formatExpression(selector);
+}
+
+export type AnnotationSchema =
+    | "whole_structure"
+    | "entity"
+    | "chain"
+    | "auth_chain"
+    | "residue"
+    | "auth_residue"
+    | "residue_range"
+    | "auth_residue_range"
+    | "atom"
+    | "auth_atom"
+    | "all_atomic";
+
+export interface DataFromUriParams {
+    uri: string;
+    format: "cif" | "bcif" | "json";
+    schema: AnnotationSchema;
+    category_name?: string;
+    field_name?: string;
+    block_header?: string;
+    block_index?: number;
+}
+
+export interface DataFromSourceParams {
+    schema: AnnotationSchema;
+    category_name: string;
+    field_name: string;
+    block_header?: string;
+    block_index?: number;
+}
+
 /**
- * A single component within a structure: its selection, how it's rendered,
- * its color/opacity, and its own optional camera focus. Flat, like
- * VolumeViewModel and the old single-component StructureViewModel, so a
- * per-component update hook can still do a simple `keyof ComponentEntry` set.
+ * A single component: its selection, how it's rendered, its color/opacity,
+ * its own optional inline label/tooltip, camera focus, and transform.
  *
- * `id` is a UI-only identifier (never written into the MVS tree — MVS has no
- * native concept of component identity). It exists purely so your app can
- * target "update this specific component" in the `components` array and use
- * it as a React key.
+ * NOTE: label/tooltip on a component can ONLY be inline text in MVS — the
+ * `*_from_uri`/`*_from_source` variants only exist on `structure`, not on
+ * `component` (confirmed against molstar's mvs-builder.d.ts: `Component`
+ * only exposes `.label()`/`.tooltip()`, no annotation-driven variants). If
+ * you need annotation-driven labels/tooltips, use the ones already on
+ * StructureViewModel instead.
  */
 export interface ComponentEntry {
     id: string;
-
     selector: Selector;
 
     representationType:
@@ -58,20 +123,32 @@ export interface ComponentEntry {
         | "surface"
         | "putty";
     size_factor: number;
-    ignore_hydrogens: boolean; // ball_and_stick / line / spacefill / surface
-    tubular_helices: boolean; // cartoon only
-    surface_type: "molecular" | "gaussian"; // surface only
-    size_theme: "uniform" | "uncertainty"; // putty only
+    /** Used ONLY when representationType is "ball_and_stick", "line", "spacefill", or "surface". */
+    ignore_hydrogens: boolean;
+    /** Used ONLY when representationType is "cartoon". */
+    tubular_helices: boolean;
+    /** Used ONLY when representationType is "surface". */
+    surface_type: "molecular" | "gaussian";
+    /** Used ONLY when representationType is "putty". */
+    size_theme: "uniform" | "uncertainty";
 
+    // --- Color (mutually exclusive in MVS — UI must ensure only one is set) ---
     color: string;
+    color_from_uri?: DataFromUriParams;
+    color_from_source?: DataFromSourceParams;
+
     opacity: number;
 
+    // --- Focus ---
     show_focus: boolean;
     focus_direction: [number, number, number];
     focus_up: [number, number, number];
 
-    // transform node — per-component, since each component can be
-    // independently positioned (MVS allows `transform` under `component`).
+    // --- Inline label/tooltip only — no *_from_uri/*_from_source at component level ---
+    label: string;
+    tooltip: string;
+
+    // --- Component-level transform ---
     translationX: number;
     translationY: number;
     translationZ: number;
@@ -80,7 +157,6 @@ export interface ComponentEntry {
     rotationZ: number; // Roll (Degrees)
 }
 
-/** Generates a UI-only component id. Swap for your app's id scheme if you have one. */
 function generateComponentId(): string {
     return typeof crypto !== "undefined" && "randomUUID" in crypto
         ? crypto.randomUUID()
@@ -104,6 +180,8 @@ export function createDefaultComponentEntry(
         show_focus: false,
         focus_direction: [0, 0, -1],
         focus_up: [0, 1, 0],
+        label: "",
+        tooltip: "",
         translationX: 0,
         translationY: 0,
         translationZ: 0,
@@ -114,51 +192,64 @@ export function createDefaultComponentEntry(
 }
 
 /**
- * The unified View-Model for structure parameters. Top-level fields (the
- * `structure` node) stay flat and singular — there's still exactly one
- * `structure` node per asset branch, so they work with a generic
- * `updateStructureViewModel(assetId, paramKey: keyof StructureViewModel, val)` hook.
- * Transform (translation/rotation) and focus are NOT top-level: MVS allows
- * `transform` under either `structure` or `component`, and `focus` only under
- * `component` (not `structure`) — so both live on each `ComponentEntry`,
- * updated via a separate `updateStructureComponentViewModel(assetId, componentId, paramKey, val)`
- * hook that maps over the array (see structure-molstar-sync.ts).
+ * The unified View-Model for structure parameters. Plain inline `label`/`tooltip`
+ * do NOT exist on `structure` in the real builder API (only `label_from_uri`/
+ * `label_from_source`/`tooltip_from_uri`/`tooltip_from_source` do) — for a
+ * whole-structure inline label, add a component with `selector: "all"` and
+ * set `label` there instead.
  */
 export interface StructureViewModel {
-    // --- structure node ---
-    format: string; // "mmcif" | "bcif" | "pdb" | ...
+    format: string;
     type: "model" | "assembly" | "symmetry" | "symmetry_mates";
-    block_header: string | null;
+
+    block_header?: string;
     block_index: number;
     model_index: number;
-    coordinates_ref: string | null;
-    assembly_id: string | null; // only applied when type === "assembly"
-    radius: number; // only applied when type === "symmetry_mates"
-    ijk_min: [number, number, number]; // only applied when type === "symmetry"
-    ijk_max: [number, number, number]; // only applied when type === "symmetry"
+    coordinates_ref?: string;
 
-    // --- zero or more independently-styled, independently-positioned components ---
+    /** Used ONLY when type === "assembly" */
+    assembly_id?: string;
+    /** Used ONLY when type === "symmetry_mates" */
+    radius: number;
+    /** Used ONLY when type === "symmetry" */
+    ijk_min: [number, number, number];
+    /** Used ONLY when type === "symmetry" */
+    ijk_max: [number, number, number];
+
+    // --- Structure-wide annotation-driven tooltip/label (mutually exclusive per pair) ---
+    tooltip_from_uri?: DataFromUriParams;
+    tooltip_from_source?: DataFromSourceParams;
+    label_from_uri?: DataFromUriParams;
+    label_from_source?: DataFromSourceParams;
+
+    // --- Structure-level transform (independent of any component's own transform) ---
+    translationX: number;
+    translationY: number;
+    translationZ: number;
+    rotationX: number;
+    rotationY: number;
+    rotationZ: number;
+
     components: ComponentEntry[];
 }
 
 export const DEFAULT_STRUCTURE_VIEW_MODEL: StructureViewModel = {
     format: "N/A",
     type: "model",
-    block_header: null,
     block_index: 0,
     model_index: 0,
-    coordinates_ref: null,
-    assembly_id: null,
     radius: 5,
     ijk_min: [-1, -1, -1],
     ijk_max: [1, 1, 1],
-
+    translationX: 0,
+    translationY: 0,
+    translationZ: 0,
+    rotationX: 0,
+    rotationY: 0,
+    rotationZ: 0,
     components: [createDefaultComponentEntry("component-default")],
 };
 
-/**
- * The unified flat View-Model for volume parameters.
- */
 export interface VolumeViewModel {
     format: string;
     type: string;
@@ -170,14 +261,11 @@ export interface VolumeViewModel {
     translationX: number;
     translationY: number;
     translationZ: number;
-    rotationX: number; // Pitch (Degrees)
-    rotationY: number; // Yaw (Degrees)
-    rotationZ: number; // Roll (Degrees)
+    rotationX: number;
+    rotationY: number;
+    rotationZ: number;
 }
 
-/**
- * Default volume view model.
- */
 export const DEFAULT_VOLUME_VIEW_MODEL: VolumeViewModel = {
     format: "N/A",
     type: "isosurface",

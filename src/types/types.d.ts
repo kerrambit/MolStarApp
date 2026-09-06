@@ -199,6 +199,8 @@ type Url = {
     headers?: Record<string, string>;
 };
 
+type AssetId = string;
+
 /**
  * Object mirroring Assets as managed by Molstar Asset Manager.
  */
@@ -206,7 +208,7 @@ interface ManagedAsset {
     /**
      * Id of the managed assset, which does not change through the app lifetime.
      */
-    id: string;
+    id: AssetId;
 
     /**
      * All managed assets are of type `Url`, that is because remotes are URL always,
