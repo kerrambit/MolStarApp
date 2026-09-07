@@ -49,7 +49,7 @@ export function isSingleSelectorExpression(
     return typeof selector === "object" && !Array.isArray(selector);
 }
 
-export function selectorToString(selector: Selector): string {
+export function selectorToString(selector: Selector, truncate = true): string {
     if (typeof selector === "string") {
         return selector;
     }
@@ -58,11 +58,15 @@ export function selectorToString(selector: Selector): string {
             .filter(([, value]) => value !== undefined)
             .map(([key, value]) => `${key}: ${value}`);
         const result = `{ ${parts.join(", ")} }`;
-        return result.length > 24 ? `${result.substring(0, 24)}...` : result;
+        return truncate && result.length > 24
+            ? `${result.substring(0, 24)}...`
+            : result;
     };
     if (Array.isArray(selector)) {
         const result = `[ ${selector.map(formatExpression).join(", ")} ]`;
-        return result.length > 5 ? `${result.substring(0, 5)}...` : result;
+        return truncate && result.length > 5
+            ? `${result.substring(0, 5)}...`
+            : result;
     }
     return formatExpression(selector);
 }
