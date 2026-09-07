@@ -10,7 +10,7 @@ import { IconTrash } from "@tabler/icons-react";
 interface DeleteActionIconProps {
     tooltip?: string;
     enabled?: boolean;
-    onClick?: () => void;
+    onClick?: (e: React.MouseEvent) => void;
 }
 
 export function DeleteActionIcon(props: DeleteActionIconProps) {
