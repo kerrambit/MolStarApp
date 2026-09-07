@@ -229,7 +229,7 @@ export function LocalAssetsTree() {
                                                 ? "Cannot delete asset, as it is being referenced in view."
                                                 : "Delete local asset."
                                         }
-                                        enabled={asset.useCount > 0}
+                                        enabled={!(asset.useCount > 0)}
                                     />
                                 </Group>
                             )}

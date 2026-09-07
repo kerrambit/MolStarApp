@@ -10,22 +10,22 @@ import { IconTrash } from "@tabler/icons-react";
 interface DeleteActionIconProps {
     tooltip?: string;
     enabled?: boolean;
-    onClick: () => void;
+    onClick?: () => void;
 }
 
 export function DeleteActionIcon(props: DeleteActionIconProps) {
+    const enabled = props.enabled ?? true;
+
+    // Render the component.
     return (
         <ActionIcon
-            disabled={props.enabled ?? false}
+            disabled={!enabled}
             variant="subtle"
             color="red"
             onClick={props.onClick}
             title={props.tooltip}
         >
-            <IconTrash
-                size={18}
-                color={props.enabled === true ? "grey" : "red"}
-            />
+            <IconTrash size={18} color={enabled !== true ? "grey" : "red"} />
         </ActionIcon>
     );
 }

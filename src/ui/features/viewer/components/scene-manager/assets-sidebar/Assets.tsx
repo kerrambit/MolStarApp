@@ -298,7 +298,7 @@ export function Assets() {
                                                         ? "Cannot delete remote asset, as it is being referenced in view."
                                                         : "Delete remote asset."
                                                 }
-                                                enabled={asset.useCount > 0}
+                                                enabled={!(asset.useCount > 0)}
                                             />
                                         </>
                                     }
