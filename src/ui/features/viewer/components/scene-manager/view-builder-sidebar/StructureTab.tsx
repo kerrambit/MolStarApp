@@ -8,7 +8,9 @@ import { useState } from "react";
 import { CollapseTrigger } from "../../../../../components/common/collapse-trigger/CollapseTriger";
 import { UiLocalStorageService } from "../../../../../services/UiLocalStorageService";
 import {
+    AlphaSlider,
     Collapse,
+    ColorInput,
     Divider,
     Group,
     NumberInput,
@@ -19,17 +21,21 @@ import {
 } from "@mantine/core";
 import { getAllParserTypes } from "../../../../../config/assetsDefinitions";
 import {
+    getActiveColorProperty,
+    getLabelMode,
+    getTooltipMode,
     isPredefinedSelector,
     isSelectorExpressionList,
     isSingleSelectorExpression,
     selectorToString,
+    type ComponenentEntryColorProperty,
     type ComponentEntry,
     type PredefinedSelector,
     type Selector,
     type SelectorExpression,
     type StructureViewModel,
 } from "../../../models/MvsViewModels";
-import { StructureTransformControls } from "./StructureTransformControls";
+import { StructureComponentEntryTransformControls } from "./StructureComponentEntryTransformControls";
 import { IJKControls } from "./IJKControls";
 import { SegmentedController } from "../../../../../components/common/segmented-controller/SegmentedController";
 import { AssetBuilderCardSectionGroup } from "./AssetBuilderCardSectionGroup";
@@ -38,6 +44,7 @@ import { ActionableListItem } from "../../../../../components/common/actionables
 import { DeleteActionIcon } from "../../../../../components/common/actionables/actions-icons/DeleteActionIcon";
 import { PlusActionIcon } from "../../../../../components/common/actionables/actions-icons/PlusActionIcon";
 import { ActionableTile } from "../../../../../components/common/actionables/ActionableTile";
+import { StructureTransformControls } from "./StructureTransformControls";
 
 // Fields editable on a SelectorExpression, driving the generated form below.
 const SELECTOR_EXPRESSION_FIELDS: {
@@ -55,6 +62,20 @@ const SELECTOR_EXPRESSION_FIELDS: {
     { key: "label_atom_id", label: "Label atom ID", type: "text" },
     { key: "auth_atom_id", label: "Auth atom ID", type: "text" },
     { key: "type_symbol", label: "Type symbol", type: "text" },
+];
+
+const schemaOptions = [
+    "whole_structure",
+    "entity",
+    "chain",
+    "auth_chain",
+    "residue",
+    "auth_residue",
+    "residue_range",
+    "auth_residue_range",
+    "atom",
+    "auth_atom",
+    "all_atomic",
 ];
 
 // Type for the component selector mode, either a predefined selector or an expression-based selector.
@@ -129,21 +150,48 @@ export function StructureTab({
         },
     );
 
-    const [representationSectionExpanded, setRepresentationSectionExpanded] =
-        useState(() => {
-            if (!currentComponentId) {
-                return false;
-            }
-            return UiLocalStorageService.ViewBuilder.getExpandedStructureRepresentationSection(
-                asset.id,
-                viewKey,
-                currentComponentId,
-            );
-        });
-
     const [
         tooltipsAndLabelsSectionExpanded,
         setTooltipsAndLabelsSectionExpanded,
+    ] = useState(() => {
+        if (!currentComponentId) {
+            return false;
+        }
+        return UiLocalStorageService.ViewBuilder.getExpandedStructureTooltipsAndLabelsSection(
+            asset.id,
+            viewKey,
+        );
+    });
+
+    const [transformSectionExpanded, setTransformSectionExpanded] = useState(
+        () => {
+            if (!currentComponentId) {
+                return false;
+            }
+            return UiLocalStorageService.ViewBuilder.getExpandedStructureTransformSection(
+                asset.id,
+                viewKey,
+            );
+        },
+    );
+
+    const [
+        componentRepresentationSectionExpanded,
+        setComponentRepresentationSectionExpanded,
+    ] = useState(() => {
+        if (!currentComponentId) {
+            return false;
+        }
+        return UiLocalStorageService.ViewBuilder.getExpandedStructureComponentRepresentationSection(
+            asset.id,
+            viewKey,
+            currentComponentId,
+        );
+    });
+
+    const [
+        componentTooltipsAndLabelsSectionExpanded,
+        setComponentTooltipsAndLabelsSectionExpanded,
     ] = useState(() => {
         if (!currentComponentId) {
             return false;
@@ -155,18 +203,19 @@ export function StructureTab({
         );
     });
 
-    const [transformSectionExpanded, setTransformSectionExpanded] = useState(
-        () => {
-            if (!currentComponentId) {
-                return false;
-            }
-            return UiLocalStorageService.ViewBuilder.getExpandedStructureComponentTransformSection(
-                asset.id,
-                viewKey,
-                currentComponentId,
-            );
-        },
-    );
+    const [
+        componentTransformSectionExpanded,
+        setComponentTransformSectionExpanded,
+    ] = useState(() => {
+        if (!currentComponentId) {
+            return false;
+        }
+        return UiLocalStorageService.ViewBuilder.getExpandedStructureComponentTransformSection(
+            asset.id,
+            viewKey,
+            currentComponentId,
+        );
+    });
 
     // Normalized view of the current component's selector as a list - a single SelectorExpression is treated as a one-item list for editing purposes.
     const currentExpressions: SelectorExpression[] =
@@ -559,6 +608,611 @@ export function StructureTab({
                         </AssetBuilderCardSectionGroup>
                     </Collapse>
                 </AssetBuilderCardSectionGroup>
+            </Collapse>
+
+            {/* Tooltips & Labels settings for structure tab. */}
+            <CollapseTrigger
+                title={"Global Tooltips & Labels"}
+                size={"md"}
+                expanded={tooltipsAndLabelsSectionExpanded}
+                onClick={() => {
+                    setTooltipsAndLabelsSectionExpanded((prev) => {
+                        const nextState = !prev;
+                        UiLocalStorageService.ViewBuilder.setExpandedStructureTooltipsAndLabelsSection(
+                            asset.id,
+                            viewKey,
+                            nextState,
+                        );
+                        return nextState;
+                    });
+                }}
+            ></CollapseTrigger>
+
+            <Collapse expanded={tooltipsAndLabelsSectionExpanded}>
+                <AssetBuilderCardSectionGroup divider={true} bottomMargin="sm">
+                    <div
+                        style={{
+                            fontSize: "0.85em",
+                            fontWeight: 600,
+                            marginBottom: "0.25em",
+                        }}
+                    >
+                        Structure Tooltips
+                    </div>
+                    <SegmentedController<"none" | "uri" | "source">
+                        orientation="vertical"
+                        size={"xs"}
+                        value={getTooltipMode(viewModel)}
+                        onChange={(value) => {
+                            if (value === "none") {
+                                onUpdateParam(
+                                    "tooltip_from_uri",
+                                    undefined,
+                                    true,
+                                );
+                                onUpdateParam(
+                                    "tooltip_from_source",
+                                    undefined,
+                                    true,
+                                );
+                            } else if (value === "uri") {
+                                onUpdateParam(
+                                    "tooltip_from_source",
+                                    undefined,
+                                    true,
+                                );
+                                onUpdateParam(
+                                    "tooltip_from_uri",
+                                    {
+                                        uri: "",
+                                        format: "json",
+                                        schema: "whole_structure",
+                                    },
+                                    true,
+                                );
+                            } else if (value === "source") {
+                                onUpdateParam(
+                                    "tooltip_from_uri",
+                                    undefined,
+                                    true,
+                                );
+                                onUpdateParam(
+                                    "tooltip_from_source",
+                                    {
+                                        category_name: "",
+                                        field_name: "",
+                                        schema: "whole_structure",
+                                    },
+                                    true,
+                                );
+                            }
+                        }}
+                        data={[
+                            { label: "None", value: "none" },
+                            { label: "From URI", value: "uri" },
+                            {
+                                label: "From Source",
+                                value: "source",
+                            },
+                        ]}
+                    />
+
+                    {/* Tooltip from URI */}
+                    {getTooltipMode(viewModel) === "uri" &&
+                        viewModel.tooltip_from_uri && (
+                            <>
+                                <TextInput
+                                    label="URI"
+                                    size="xs"
+                                    value={viewModel.tooltip_from_uri.uri}
+                                    onChange={(e) =>
+                                        onUpdateParam(
+                                            "tooltip_from_uri",
+                                            {
+                                                ...viewModel.tooltip_from_uri!,
+                                                uri: e.currentTarget.value,
+                                            },
+                                            false,
+                                        )
+                                    }
+                                    onBlur={(e) =>
+                                        onUpdateParam(
+                                            "tooltip_from_uri",
+                                            {
+                                                ...viewModel.tooltip_from_uri!,
+                                                uri: e.currentTarget.value,
+                                            },
+                                            true,
+                                        )
+                                    }
+                                />
+                                <Select
+                                    label="Format"
+                                    size="xs"
+                                    data={["cif", "bcif", "json"]}
+                                    value={viewModel.tooltip_from_uri.format}
+                                    onChange={(val) =>
+                                        val &&
+                                        onUpdateParam(
+                                            "tooltip_from_uri",
+                                            {
+                                                ...viewModel.tooltip_from_uri!,
+                                                format: val as any,
+                                            },
+                                            true,
+                                        )
+                                    }
+                                />
+                                <Select
+                                    label="Schema"
+                                    size="xs"
+                                    data={schemaOptions}
+                                    value={viewModel.tooltip_from_uri.schema}
+                                    onChange={(val) =>
+                                        val &&
+                                        onUpdateParam(
+                                            "tooltip_from_uri",
+                                            {
+                                                ...viewModel.tooltip_from_uri!,
+                                                schema: val as any,
+                                            },
+                                            true,
+                                        )
+                                    }
+                                />
+                                <TextInput
+                                    label="Category Name (Optional)"
+                                    size="xs"
+                                    value={
+                                        viewModel.tooltip_from_uri
+                                            .category_name || ""
+                                    }
+                                    onChange={(e) =>
+                                        onUpdateParam(
+                                            "tooltip_from_uri",
+                                            {
+                                                ...viewModel.tooltip_from_uri!,
+                                                category_name:
+                                                    e.currentTarget.value,
+                                            },
+                                            false,
+                                        )
+                                    }
+                                    onBlur={(e) =>
+                                        onUpdateParam(
+                                            "tooltip_from_uri",
+                                            {
+                                                ...viewModel.tooltip_from_uri!,
+                                                category_name:
+                                                    e.currentTarget.value ||
+                                                    undefined,
+                                            },
+                                            true,
+                                        )
+                                    }
+                                />
+                                <TextInput
+                                    label="Field Name (Optional)"
+                                    size="xs"
+                                    value={
+                                        viewModel.tooltip_from_uri.field_name ||
+                                        ""
+                                    }
+                                    onChange={(e) =>
+                                        onUpdateParam(
+                                            "tooltip_from_uri",
+                                            {
+                                                ...viewModel.tooltip_from_uri!,
+                                                field_name:
+                                                    e.currentTarget.value,
+                                            },
+                                            false,
+                                        )
+                                    }
+                                    onBlur={(e) =>
+                                        onUpdateParam(
+                                            "tooltip_from_uri",
+                                            {
+                                                ...viewModel.tooltip_from_uri!,
+                                                field_name:
+                                                    e.currentTarget.value ||
+                                                    undefined,
+                                            },
+                                            true,
+                                        )
+                                    }
+                                />
+                            </>
+                        )}
+
+                    {/* Tooltip from Source */}
+                    {getTooltipMode(viewModel) === "source" &&
+                        viewModel.tooltip_from_source && (
+                            <>
+                                <Select
+                                    label="Schema"
+                                    size="xs"
+                                    data={schemaOptions}
+                                    value={viewModel.tooltip_from_source.schema}
+                                    onChange={(val) =>
+                                        val &&
+                                        onUpdateParam(
+                                            "tooltip_from_source",
+                                            {
+                                                ...viewModel.tooltip_from_source!,
+                                                schema: val as any,
+                                            },
+                                            true,
+                                        )
+                                    }
+                                />
+                                <TextInput
+                                    label="Category Name"
+                                    size="xs"
+                                    value={
+                                        viewModel.tooltip_from_source
+                                            .category_name
+                                    }
+                                    onChange={(e) =>
+                                        onUpdateParam(
+                                            "tooltip_from_source",
+                                            {
+                                                ...viewModel.tooltip_from_source!,
+                                                category_name:
+                                                    e.currentTarget.value,
+                                            },
+                                            false,
+                                        )
+                                    }
+                                    onBlur={(e) =>
+                                        onUpdateParam(
+                                            "tooltip_from_source",
+                                            {
+                                                ...viewModel.tooltip_from_source!,
+                                                category_name:
+                                                    e.currentTarget.value,
+                                            },
+                                            true,
+                                        )
+                                    }
+                                />
+                                <TextInput
+                                    label="Field Name"
+                                    size="xs"
+                                    value={
+                                        viewModel.tooltip_from_source.field_name
+                                    }
+                                    onChange={(e) =>
+                                        onUpdateParam(
+                                            "tooltip_from_source",
+                                            {
+                                                ...viewModel.tooltip_from_source!,
+                                                field_name:
+                                                    e.currentTarget.value,
+                                            },
+                                            false,
+                                        )
+                                    }
+                                    onBlur={(e) =>
+                                        onUpdateParam(
+                                            "tooltip_from_source",
+                                            {
+                                                ...viewModel.tooltip_from_source!,
+                                                field_name:
+                                                    e.currentTarget.value,
+                                            },
+                                            true,
+                                        )
+                                    }
+                                />
+                            </>
+                        )}
+                </AssetBuilderCardSectionGroup>
+
+                <AssetBuilderCardSectionGroup divider={false}>
+                    <div
+                        style={{
+                            fontSize: "0.85em",
+                            fontWeight: 600,
+                            marginBottom: "0.25em",
+                        }}
+                    >
+                        Structure Labels
+                    </div>
+                    <SegmentedController<"none" | "uri" | "source">
+                        orientation="vertical"
+                        size={"xs"}
+                        value={getLabelMode(viewModel)}
+                        onChange={(value) => {
+                            if (value === "none") {
+                                onUpdateParam(
+                                    "label_from_uri",
+                                    undefined,
+                                    true,
+                                );
+                                onUpdateParam(
+                                    "label_from_source",
+                                    undefined,
+                                    true,
+                                );
+                            } else if (value === "uri") {
+                                onUpdateParam(
+                                    "label_from_source",
+                                    undefined,
+                                    true,
+                                );
+                                onUpdateParam(
+                                    "label_from_uri",
+                                    {
+                                        uri: "",
+                                        format: "json",
+                                        schema: "whole_structure",
+                                    },
+                                    true,
+                                );
+                            } else if (value === "source") {
+                                onUpdateParam(
+                                    "label_from_uri",
+                                    undefined,
+                                    true,
+                                );
+                                onUpdateParam(
+                                    "label_from_source",
+                                    {
+                                        category_name: "",
+                                        field_name: "",
+                                        schema: "whole_structure",
+                                    },
+                                    true,
+                                );
+                            }
+                        }}
+                        data={[
+                            { label: "None", value: "none" },
+                            { label: "From URI", value: "uri" },
+                            {
+                                label: "From Source",
+                                value: "source",
+                            },
+                        ]}
+                    />
+
+                    {/* Label from URI */}
+                    {getLabelMode(viewModel) === "uri" &&
+                        viewModel.label_from_uri && (
+                            <>
+                                <TextInput
+                                    label="URI"
+                                    size="xs"
+                                    value={viewModel.label_from_uri.uri}
+                                    onChange={(e) =>
+                                        onUpdateParam(
+                                            "label_from_uri",
+                                            {
+                                                ...viewModel.label_from_uri!,
+                                                uri: e.currentTarget.value,
+                                            },
+                                            false,
+                                        )
+                                    }
+                                    onBlur={(e) =>
+                                        onUpdateParam(
+                                            "label_from_uri",
+                                            {
+                                                ...viewModel.label_from_uri!,
+                                                uri: e.currentTarget.value,
+                                            },
+                                            true,
+                                        )
+                                    }
+                                />
+                                <Select
+                                    label="Format"
+                                    size="xs"
+                                    data={["cif", "bcif", "json"]}
+                                    value={viewModel.label_from_uri.format}
+                                    onChange={(val) =>
+                                        val &&
+                                        onUpdateParam(
+                                            "label_from_uri",
+                                            {
+                                                ...viewModel.label_from_uri!,
+                                                format: val as any,
+                                            },
+                                            true,
+                                        )
+                                    }
+                                />
+                                <Select
+                                    label="Schema"
+                                    size="xs"
+                                    data={schemaOptions}
+                                    value={viewModel.label_from_uri.schema}
+                                    onChange={(val) =>
+                                        val &&
+                                        onUpdateParam(
+                                            "label_from_uri",
+                                            {
+                                                ...viewModel.label_from_uri!,
+                                                schema: val as any,
+                                            },
+                                            true,
+                                        )
+                                    }
+                                />
+                                <TextInput
+                                    label="Category Name (Optional)"
+                                    size="xs"
+                                    value={
+                                        viewModel.label_from_uri
+                                            .category_name || ""
+                                    }
+                                    onChange={(e) =>
+                                        onUpdateParam(
+                                            "label_from_uri",
+                                            {
+                                                ...viewModel.label_from_uri!,
+                                                category_name:
+                                                    e.currentTarget.value,
+                                            },
+                                            false,
+                                        )
+                                    }
+                                    onBlur={(e) =>
+                                        onUpdateParam(
+                                            "label_from_uri",
+                                            {
+                                                ...viewModel.label_from_uri!,
+                                                category_name:
+                                                    e.currentTarget.value ||
+                                                    undefined,
+                                            },
+                                            true,
+                                        )
+                                    }
+                                />
+                                <TextInput
+                                    label="Field Name (Optional)"
+                                    size="xs"
+                                    value={
+                                        viewModel.label_from_uri.field_name ||
+                                        ""
+                                    }
+                                    onChange={(e) =>
+                                        onUpdateParam(
+                                            "label_from_uri",
+                                            {
+                                                ...viewModel.label_from_uri!,
+                                                field_name:
+                                                    e.currentTarget.value,
+                                            },
+                                            false,
+                                        )
+                                    }
+                                    onBlur={(e) =>
+                                        onUpdateParam(
+                                            "label_from_uri",
+                                            {
+                                                ...viewModel.label_from_uri!,
+                                                field_name:
+                                                    e.currentTarget.value ||
+                                                    undefined,
+                                            },
+                                            true,
+                                        )
+                                    }
+                                />
+                            </>
+                        )}
+
+                    {/* Label from Source */}
+                    {getLabelMode(viewModel) === "source" &&
+                        viewModel.label_from_source && (
+                            <>
+                                <Select
+                                    label="Schema"
+                                    size="xs"
+                                    data={schemaOptions}
+                                    value={viewModel.label_from_source.schema}
+                                    onChange={(val) =>
+                                        val &&
+                                        onUpdateParam(
+                                            "label_from_source",
+                                            {
+                                                ...viewModel.label_from_source!,
+                                                schema: val as any,
+                                            },
+                                            true,
+                                        )
+                                    }
+                                />
+                                <TextInput
+                                    label="Category Name"
+                                    size="xs"
+                                    value={
+                                        viewModel.label_from_source
+                                            .category_name
+                                    }
+                                    onChange={(e) =>
+                                        onUpdateParam(
+                                            "label_from_source",
+                                            {
+                                                ...viewModel.label_from_source!,
+                                                category_name:
+                                                    e.currentTarget.value,
+                                            },
+                                            false,
+                                        )
+                                    }
+                                    onBlur={(e) =>
+                                        onUpdateParam(
+                                            "label_from_source",
+                                            {
+                                                ...viewModel.label_from_source!,
+                                                category_name:
+                                                    e.currentTarget.value,
+                                            },
+                                            true,
+                                        )
+                                    }
+                                />
+                                <TextInput
+                                    label="Field Name"
+                                    size="xs"
+                                    value={
+                                        viewModel.label_from_source.field_name
+                                    }
+                                    onChange={(e) =>
+                                        onUpdateParam(
+                                            "label_from_source",
+                                            {
+                                                ...viewModel.label_from_source!,
+                                                field_name:
+                                                    e.currentTarget.value,
+                                            },
+                                            false,
+                                        )
+                                    }
+                                    onBlur={(e) =>
+                                        onUpdateParam(
+                                            "label_from_source",
+                                            {
+                                                ...viewModel.label_from_source!,
+                                                field_name:
+                                                    e.currentTarget.value,
+                                            },
+                                            true,
+                                        )
+                                    }
+                                />
+                            </>
+                        )}
+                </AssetBuilderCardSectionGroup>
+            </Collapse>
+
+            {/* Transform settings for structure tab. */}
+            <CollapseTrigger
+                title={"Global transform"}
+                size={"md"}
+                expanded={transformSectionExpanded}
+                onClick={() => {
+                    setTransformSectionExpanded((prev) => {
+                        const nextState = !prev;
+                        UiLocalStorageService.ViewBuilder.setExpandedStructureTransformSection(
+                            asset.id,
+                            viewKey,
+                            nextState,
+                        );
+                        return nextState;
+                    });
+                }}
+            ></CollapseTrigger>
+
+            <Collapse expanded={transformSectionExpanded}>
+                <StructureTransformControls
+                    viewModel={viewModel}
+                    onUpdateParam={onUpdateParam}
+                ></StructureTransformControls>
             </Collapse>
 
             {/* Components settings for Structure tab. */}
@@ -1011,22 +1665,24 @@ export function StructureTab({
                     <CollapseTrigger
                         title={"Representation"}
                         size={"md"}
-                        expanded={representationSectionExpanded}
+                        expanded={componentRepresentationSectionExpanded}
                         onClick={() => {
-                            setRepresentationSectionExpanded((prev) => {
-                                const nextState = !prev;
-                                UiLocalStorageService.ViewBuilder.setExpandedStructureRepresentationSection(
-                                    asset.id,
-                                    viewKey,
-                                    currentComponentId!,
-                                    nextState,
-                                );
-                                return nextState;
-                            });
+                            setComponentRepresentationSectionExpanded(
+                                (prev) => {
+                                    const nextState = !prev;
+                                    UiLocalStorageService.ViewBuilder.setExpandedStructureComponentRepresentationSection(
+                                        asset.id,
+                                        viewKey,
+                                        currentComponentId!,
+                                        nextState,
+                                    );
+                                    return nextState;
+                                },
+                            );
                         }}
                     ></CollapseTrigger>
 
-                    <Collapse expanded={representationSectionExpanded}>
+                    <Collapse expanded={componentRepresentationSectionExpanded}>
                         <AssetBuilderCardSectionGroup>
                             <Select
                                 label="Type"
@@ -1056,6 +1712,433 @@ export function StructureTab({
                                 }}
                                 size="xs"
                             />
+                            <SegmentedController<ComponenentEntryColorProperty>
+                                orientation="vertical"
+                                size={"xs"}
+                                value={getActiveColorProperty(currentComponent)}
+                                onChange={(value) => {
+                                    if (!currentComponent) {
+                                        return;
+                                    }
+
+                                    if (value === "Color") {
+                                        onUpdateStructureComponentParam(
+                                            currentComponent.id,
+                                            "color",
+                                            "#ffffff",
+                                            true,
+                                        );
+                                        onUpdateStructureComponentParam(
+                                            currentComponent.id,
+                                            "color_from_uri",
+                                            undefined,
+                                            true,
+                                        );
+                                        onUpdateStructureComponentParam(
+                                            currentComponent.id,
+                                            "color_from_source",
+                                            undefined,
+                                            true,
+                                        );
+                                    } else if (value === "Color from URI") {
+                                        onUpdateStructureComponentParam(
+                                            currentComponent.id,
+                                            "color",
+                                            undefined,
+                                            true,
+                                        );
+
+                                        // Matches DataFromUriParams perfectly
+                                        onUpdateStructureComponentParam(
+                                            currentComponent.id,
+                                            "color_from_uri",
+                                            {
+                                                uri: "",
+                                                format: "json",
+                                                schema: "whole_structure",
+                                            },
+                                            true,
+                                        );
+
+                                        onUpdateStructureComponentParam(
+                                            currentComponent.id,
+                                            "color_from_source",
+                                            undefined,
+                                            true,
+                                        );
+                                    } else if (value === "Color from source") {
+                                        onUpdateStructureComponentParam(
+                                            currentComponent.id,
+                                            "color",
+                                            undefined,
+                                            true,
+                                        );
+                                        onUpdateStructureComponentParam(
+                                            currentComponent.id,
+                                            "color_from_uri",
+                                            undefined,
+                                            true,
+                                        );
+
+                                        // Matches DataFromSourceParams perfectly
+                                        onUpdateStructureComponentParam(
+                                            currentComponent.id,
+                                            "color_from_source",
+                                            {
+                                                category_name: "",
+                                                field_name: "",
+                                                schema: "whole_structure",
+                                            },
+                                            true,
+                                        );
+                                    }
+                                }}
+                                data={[
+                                    {
+                                        label: "Color",
+                                        value: "Color",
+                                    },
+                                    {
+                                        label: "Color from URI (advanced)",
+                                        value: "Color from URI",
+                                    },
+                                    {
+                                        label: "Color from source (advanced)",
+                                        value: "Color from source",
+                                    },
+                                ]}
+                            />
+                            {getActiveColorProperty(currentComponent) ===
+                                "Color" && (
+                                <>
+                                    <ColorInput
+                                        label="Color"
+                                        value={
+                                            currentComponent?.color || "#ffffff"
+                                        }
+                                        size="xs"
+                                        format="hex"
+                                        onChange={(val) => {
+                                            if (val && currentComponentId) {
+                                                onUpdateStructureComponentParam(
+                                                    currentComponentId,
+                                                    "color",
+                                                    val,
+                                                    false,
+                                                );
+                                            }
+                                        }}
+                                        onChangeEnd={(val) => {
+                                            if (val && currentComponentId) {
+                                                onUpdateStructureComponentParam(
+                                                    currentComponentId,
+                                                    "color",
+                                                    val,
+                                                    true,
+                                                );
+                                            }
+                                        }}
+                                    />
+                                </>
+                            )}
+                            {/* Color from URI */}
+                            {getActiveColorProperty(currentComponent) ===
+                                "Color from URI" &&
+                                currentComponent?.color_from_uri && (
+                                    <>
+                                        <TextInput
+                                            label="URI"
+                                            size="xs"
+                                            value={
+                                                currentComponent.color_from_uri
+                                                    .uri
+                                            }
+                                            onChange={(e) =>
+                                                onUpdateStructureComponentParam(
+                                                    currentComponent.id,
+                                                    "color_from_uri",
+                                                    {
+                                                        ...currentComponent.color_from_uri!,
+                                                        uri: e.currentTarget
+                                                            .value,
+                                                    },
+                                                    false,
+                                                )
+                                            }
+                                            onBlur={(e) =>
+                                                onUpdateStructureComponentParam(
+                                                    currentComponent.id,
+                                                    "color_from_uri",
+                                                    {
+                                                        ...currentComponent.color_from_uri!,
+                                                        uri: e.currentTarget
+                                                            .value,
+                                                    },
+                                                    true,
+                                                )
+                                            }
+                                        />
+                                        <Select
+                                            label="Format"
+                                            size="xs"
+                                            data={["cif", "bcif", "json"]}
+                                            value={
+                                                currentComponent.color_from_uri
+                                                    .format
+                                            }
+                                            onChange={(val) =>
+                                                val &&
+                                                onUpdateStructureComponentParam(
+                                                    currentComponent.id,
+                                                    "color_from_uri",
+                                                    {
+                                                        ...currentComponent.color_from_uri!,
+                                                        format: val as any,
+                                                    },
+                                                    true,
+                                                )
+                                            }
+                                        />
+                                        <Select
+                                            label="Schema"
+                                            size="xs"
+                                            data={[
+                                                "whole_structure",
+                                                "entity",
+                                                "chain",
+                                                "auth_chain",
+                                                "residue",
+                                                "auth_residue",
+                                                "residue_range",
+                                                "auth_residue_range",
+                                                "atom",
+                                                "auth_atom",
+                                                "all_atomic",
+                                            ]}
+                                            value={
+                                                currentComponent.color_from_uri
+                                                    .schema
+                                            }
+                                            onChange={(val) =>
+                                                val &&
+                                                onUpdateStructureComponentParam(
+                                                    currentComponent.id,
+                                                    "color_from_uri",
+                                                    {
+                                                        ...currentComponent.color_from_uri!,
+                                                        schema: val as any,
+                                                    },
+                                                    true,
+                                                )
+                                            }
+                                        />
+                                        <TextInput
+                                            label="Category Name (Optional)"
+                                            size="xs"
+                                            value={
+                                                currentComponent.color_from_uri
+                                                    .category_name || ""
+                                            }
+                                            onChange={(e) =>
+                                                onUpdateStructureComponentParam(
+                                                    currentComponent.id,
+                                                    "color_from_uri",
+                                                    {
+                                                        ...currentComponent.color_from_uri!,
+                                                        category_name:
+                                                            e.currentTarget
+                                                                .value,
+                                                    },
+                                                    false,
+                                                )
+                                            }
+                                            onBlur={(e) =>
+                                                onUpdateStructureComponentParam(
+                                                    currentComponent.id,
+                                                    "color_from_uri",
+                                                    {
+                                                        ...currentComponent.color_from_uri!,
+                                                        category_name:
+                                                            e.currentTarget
+                                                                .value ||
+                                                            undefined,
+                                                    },
+                                                    true,
+                                                )
+                                            }
+                                        />
+                                        <TextInput
+                                            label="Field Name (Optional)"
+                                            size="xs"
+                                            value={
+                                                currentComponent.color_from_uri
+                                                    .field_name || ""
+                                            }
+                                            onChange={(e) =>
+                                                onUpdateStructureComponentParam(
+                                                    currentComponent.id,
+                                                    "color_from_uri",
+                                                    {
+                                                        ...currentComponent.color_from_uri!,
+                                                        field_name:
+                                                            e.currentTarget
+                                                                .value,
+                                                    },
+                                                    false,
+                                                )
+                                            }
+                                            onBlur={(e) =>
+                                                onUpdateStructureComponentParam(
+                                                    currentComponent.id,
+                                                    "color_from_uri",
+                                                    {
+                                                        ...currentComponent.color_from_uri!,
+                                                        field_name:
+                                                            e.currentTarget
+                                                                .value ||
+                                                            undefined,
+                                                    },
+                                                    true,
+                                                )
+                                            }
+                                        />
+                                    </>
+                                )}
+
+                            {/* Color from Source */}
+                            {getActiveColorProperty(currentComponent) ===
+                                "Color from source" &&
+                                currentComponent?.color_from_source && (
+                                    <>
+                                        <Select
+                                            label="Schema"
+                                            size="xs"
+                                            data={[
+                                                "whole_structure",
+                                                "entity",
+                                                "chain",
+                                                "auth_chain",
+                                                "residue",
+                                                "auth_residue",
+                                                "residue_range",
+                                                "auth_residue_range",
+                                                "atom",
+                                                "auth_atom",
+                                                "all_atomic",
+                                            ]}
+                                            value={
+                                                currentComponent
+                                                    .color_from_source.schema
+                                            }
+                                            onChange={(val) =>
+                                                val &&
+                                                onUpdateStructureComponentParam(
+                                                    currentComponent.id,
+                                                    "color_from_source",
+                                                    {
+                                                        ...currentComponent.color_from_source!,
+                                                        schema: val as any,
+                                                    },
+                                                    true,
+                                                )
+                                            }
+                                        />
+                                        <TextInput
+                                            label="Category Name"
+                                            size="xs"
+                                            value={
+                                                currentComponent
+                                                    .color_from_source
+                                                    .category_name
+                                            }
+                                            onChange={(e) =>
+                                                onUpdateStructureComponentParam(
+                                                    currentComponent.id,
+                                                    "color_from_source",
+                                                    {
+                                                        ...currentComponent.color_from_source!,
+                                                        category_name:
+                                                            e.currentTarget
+                                                                .value,
+                                                    },
+                                                    false,
+                                                )
+                                            }
+                                            onBlur={(e) =>
+                                                onUpdateStructureComponentParam(
+                                                    currentComponent.id,
+                                                    "color_from_source",
+                                                    {
+                                                        ...currentComponent.color_from_source!,
+                                                        category_name:
+                                                            e.currentTarget
+                                                                .value,
+                                                    },
+                                                    true,
+                                                )
+                                            }
+                                        />
+                                        <TextInput
+                                            label="Field Name"
+                                            size="xs"
+                                            value={
+                                                currentComponent
+                                                    .color_from_source
+                                                    .field_name
+                                            }
+                                            onChange={(e) =>
+                                                onUpdateStructureComponentParam(
+                                                    currentComponent.id,
+                                                    "color_from_source",
+                                                    {
+                                                        ...currentComponent.color_from_source!,
+                                                        field_name:
+                                                            e.currentTarget
+                                                                .value,
+                                                    },
+                                                    false,
+                                                )
+                                            }
+                                            onBlur={(e) =>
+                                                onUpdateStructureComponentParam(
+                                                    currentComponent.id,
+                                                    "color_from_source",
+                                                    {
+                                                        ...currentComponent.color_from_source!,
+                                                        field_name:
+                                                            e.currentTarget
+                                                                .value,
+                                                    },
+                                                    true,
+                                                )
+                                            }
+                                        />
+                                    </>
+                                )}
+                            <AlphaSlider
+                                color={currentComponent?.color || "#ffffff"}
+                                value={currentComponent?.opacity || 1.0}
+                                onChange={(val) => {
+                                    if (val && currentComponentId) {
+                                        onUpdateStructureComponentParam(
+                                            currentComponentId,
+                                            "opacity",
+                                            val,
+                                            false,
+                                        );
+                                    }
+                                }}
+                                onChangeEnd={(val) => {
+                                    if (val && currentComponentId) {
+                                        onUpdateStructureComponentParam(
+                                            currentComponentId,
+                                            "opacity",
+                                            val,
+                                            true,
+                                        );
+                                    }
+                                }}
+                            ></AlphaSlider>
                         </AssetBuilderCardSectionGroup>
                     </Collapse>
 
@@ -1063,32 +2146,116 @@ export function StructureTab({
                     <CollapseTrigger
                         title={"Tooltips & Labels"}
                         size={"md"}
-                        expanded={tooltipsAndLabelsSectionExpanded}
+                        expanded={componentTooltipsAndLabelsSectionExpanded}
                         onClick={() => {
-                            setTooltipsAndLabelsSectionExpanded((prev) => {
-                                const nextState = !prev;
-                                UiLocalStorageService.ViewBuilder.setExpandedStructureComponentTooltipsAndLabelsSection(
-                                    asset.id,
-                                    viewKey,
-                                    currentComponentId!,
-                                    nextState,
-                                );
-                                return nextState;
-                            });
+                            setComponentTooltipsAndLabelsSectionExpanded(
+                                (prev) => {
+                                    const nextState = !prev;
+                                    UiLocalStorageService.ViewBuilder.setExpandedStructureComponentTooltipsAndLabelsSection(
+                                        asset.id,
+                                        viewKey,
+                                        currentComponentId!,
+                                        nextState,
+                                    );
+                                    return nextState;
+                                },
+                            );
                         }}
                     ></CollapseTrigger>
 
-                    <Collapse expanded={tooltipsAndLabelsSectionExpanded}>
-                        <AssetBuilderCardSectionGroup></AssetBuilderCardSectionGroup>
+                    <Collapse
+                        expanded={componentTooltipsAndLabelsSectionExpanded}
+                    >
+                        <AssetBuilderCardSectionGroup>
+                            <TextInput
+                                label="Label"
+                                placeholder="Text to display next to the component"
+                                value={currentComponent?.label || ""}
+                                size="xs"
+                                onChange={(e) => {
+                                    if (currentComponentId) {
+                                        onUpdateStructureComponentParam(
+                                            currentComponentId,
+                                            "label",
+                                            e.currentTarget.value,
+                                            false,
+                                        );
+                                    }
+                                }}
+                                onBlur={(e) => {
+                                    if (currentComponentId) {
+                                        onUpdateStructureComponentParam(
+                                            currentComponentId,
+                                            "label",
+                                            e.currentTarget.value,
+                                            true,
+                                        );
+                                    }
+                                }}
+                                onKeyDown={(e) => {
+                                    if (
+                                        e.key === "Enter" &&
+                                        currentComponentId
+                                    ) {
+                                        onUpdateStructureComponentParam(
+                                            currentComponentId,
+                                            "label",
+                                            e.currentTarget.value,
+                                            true,
+                                        );
+                                    }
+                                }}
+                            />
+
+                            <TextInput
+                                label="Tooltip"
+                                placeholder="Text to show on hover"
+                                value={currentComponent?.tooltip || ""}
+                                size="xs"
+                                onChange={(e) => {
+                                    if (currentComponentId) {
+                                        onUpdateStructureComponentParam(
+                                            currentComponentId,
+                                            "tooltip",
+                                            e.currentTarget.value,
+                                            false,
+                                        );
+                                    }
+                                }}
+                                onBlur={(e) => {
+                                    if (currentComponentId) {
+                                        onUpdateStructureComponentParam(
+                                            currentComponentId,
+                                            "tooltip",
+                                            e.currentTarget.value,
+                                            true,
+                                        );
+                                    }
+                                }}
+                                onKeyDown={(e) => {
+                                    if (
+                                        e.key === "Enter" &&
+                                        currentComponentId
+                                    ) {
+                                        onUpdateStructureComponentParam(
+                                            currentComponentId,
+                                            "tooltip",
+                                            e.currentTarget.value,
+                                            true,
+                                        );
+                                    }
+                                }}
+                            />
+                        </AssetBuilderCardSectionGroup>
                     </Collapse>
 
                     {/* Transform settings for structure component tab. */}
                     <CollapseTrigger
                         title={"Transform"}
                         size={"md"}
-                        expanded={transformSectionExpanded}
+                        expanded={componentTransformSectionExpanded}
                         onClick={() => {
-                            setTransformSectionExpanded((prev) => {
+                            setComponentTransformSectionExpanded((prev) => {
                                 const nextState = !prev;
                                 UiLocalStorageService.ViewBuilder.setExpandedStructureComponentTransformSection(
                                     asset.id,
@@ -1101,13 +2268,13 @@ export function StructureTab({
                         }}
                     ></CollapseTrigger>
 
-                    <Collapse expanded={transformSectionExpanded}>
-                        <StructureTransformControls
+                    <Collapse expanded={componentTransformSectionExpanded}>
+                        <StructureComponentEntryTransformControls
                             component={currentComponent}
                             onUpdateStructureComponentParam={
                                 onUpdateStructureComponentParam
                             }
-                        ></StructureTransformControls>
+                        ></StructureComponentEntryTransformControls>
                     </Collapse>
                 </AssetBuilderCardSectionGroup>
             </Collapse>

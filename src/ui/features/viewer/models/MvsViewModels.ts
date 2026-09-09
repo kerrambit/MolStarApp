@@ -161,6 +161,33 @@ export interface ComponentEntry {
     rotationZ: number; // Roll (Degrees)
 }
 
+export type ComponenentEntryColorProperty =
+    | "Color"
+    | "Color from URI"
+    | "Color from source";
+
+export function getActiveColorProperty(
+    entry?: ComponentEntry,
+): ComponenentEntryColorProperty {
+    if (!entry) {
+        return "Color";
+    }
+
+    if (entry.color_from_uri !== undefined) {
+        return "Color from URI";
+    }
+
+    if (entry.color_from_source !== undefined) {
+        return "Color from source";
+    }
+
+    if (entry.color) {
+        return "Color";
+    }
+
+    return "Color";
+}
+
 function generateComponentId(): string {
     return typeof crypto !== "undefined" && "randomUUID" in crypto
         ? crypto.randomUUID()
@@ -194,6 +221,22 @@ export function createDefaultComponentEntry(
         rotationZ: 0,
     };
 }
+
+export const getTooltipMode = (
+    viewModel: StructureViewModel,
+): "none" | "uri" | "source" => {
+    if (viewModel.tooltip_from_uri) return "uri";
+    if (viewModel.tooltip_from_source) return "source";
+    return "none";
+};
+
+export const getLabelMode = (
+    viewModel: StructureViewModel,
+): "none" | "uri" | "source" => {
+    if (viewModel.label_from_uri) return "uri";
+    if (viewModel.label_from_source) return "source";
+    return "none";
+};
 
 /**
  * The unified View-Model for structure parameters. Plain inline `label`/`tooltip`
