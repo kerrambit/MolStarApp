@@ -760,6 +760,7 @@ export function StructureTab({
                                                             "tooltip_from_uri",
                                                             {
                                                                 ...viewModel.tooltip_from_uri!,
+                                                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                                 format: val as any,
                                                             },
                                                             true,
@@ -781,6 +782,7 @@ export function StructureTab({
                                                             "tooltip_from_uri",
                                                             {
                                                                 ...viewModel.tooltip_from_uri!,
+                                                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                                 schema: val as any,
                                                             },
                                                             true,
@@ -881,6 +883,7 @@ export function StructureTab({
                                                             "tooltip_from_source",
                                                             {
                                                                 ...viewModel.tooltip_from_source!,
+                                                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                                 schema: val as any,
                                                             },
                                                             true,
@@ -1085,6 +1088,7 @@ export function StructureTab({
                                                             "label_from_uri",
                                                             {
                                                                 ...viewModel.label_from_uri!,
+                                                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                                 format: val as any,
                                                             },
                                                             true,
@@ -1105,6 +1109,7 @@ export function StructureTab({
                                                             "label_from_uri",
                                                             {
                                                                 ...viewModel.label_from_uri!,
+                                                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                                 schema: val as any,
                                                             },
                                                             true,
@@ -1203,6 +1208,7 @@ export function StructureTab({
                                                             "label_from_source",
                                                             {
                                                                 ...viewModel.label_from_source!,
+                                                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                                 schema: val as any,
                                                             },
                                                             true,
@@ -1991,6 +1997,7 @@ export function StructureTab({
                                                     "color_from_uri",
                                                     {
                                                         ...currentComponent.color_from_uri!,
+                                                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                         format: val as any,
                                                     },
                                                     true,
@@ -2024,6 +2031,7 @@ export function StructureTab({
                                                     "color_from_uri",
                                                     {
                                                         ...currentComponent.color_from_uri!,
+                                                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                         schema: val as any,
                                                     },
                                                     true,
@@ -2135,6 +2143,7 @@ export function StructureTab({
                                                     "color_from_source",
                                                     {
                                                         ...currentComponent.color_from_source!,
+                                                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                         schema: val as any,
                                                     },
                                                     true,

@@ -11,8 +11,7 @@ type VolumeTransformControlsProps = {
     viewModel: VolumeViewModel;
     onUpdateParam: (
         key: keyof VolumeViewModel,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        val: any,
+        val: VolumeViewModel[keyof VolumeViewModel],
         sync: boolean,
     ) => void;
 };

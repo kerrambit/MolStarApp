@@ -221,8 +221,7 @@ export function useViewBuilder(viewKey: string) {
     const updateVolumeViewModelForAsset = async (
         assetId: AssetId,
         paramKey: keyof VolumeViewModel,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        val: any,
+        val: VolumeViewModel[keyof VolumeViewModel],
         syncToMolstar: boolean,
     ) => {
         // Get updated view model .
@@ -296,8 +295,7 @@ export function useViewBuilder(viewKey: string) {
     const updateStructureViewModelForAsset = async (
         assetId: AssetId,
         paramKey: keyof StructureViewModel,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        val: any,
+        val: StructureViewModel[keyof StructureViewModel],
         syncToMolstar: boolean,
     ) => {
         const updatedVm = {

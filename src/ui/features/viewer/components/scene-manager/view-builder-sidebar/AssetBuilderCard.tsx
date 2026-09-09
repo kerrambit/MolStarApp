@@ -34,14 +34,12 @@ interface AssetBuilderCardProps {
     onToggleSelect: (checked: boolean, tabType: TabType) => void;
     onUpdateVolumeParam: (
         key: keyof VolumeViewModel,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        val: any,
+        val: VolumeViewModel[keyof VolumeViewModel],
         sync: boolean,
     ) => void;
     onUpdateStructureParam: (
         key: keyof StructureViewModel,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        val: any,
+        val: StructureViewModel[keyof StructureViewModel],
         sync: boolean,
     ) => void;
     onUpdateStructureComponentParam: (
@@ -179,7 +177,9 @@ export function AssetBuilderCard({
                             asset={asset}
                             viewModel={structureViewModel}
                             onUpdateParam={onUpdateStructureParam}
-                            onUpdateStructureComponentParam={onUpdateStructureComponentParam}
+                            onUpdateStructureComponentParam={
+                                onUpdateStructureComponentParam
+                            }
                         ></StructureTab>
                     )}
 

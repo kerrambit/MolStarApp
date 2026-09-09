@@ -11,8 +11,7 @@ type IJKControlsProps = {
     viewModel: StructureViewModel;
     onUpdateParam: (
         key: keyof StructureViewModel,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        val: any,
+        val: StructureViewModel[keyof StructureViewModel],
         sync: boolean,
     ) => void;
 };
