@@ -605,614 +605,712 @@ export function StructureTab({
                                     onUpdateParam={onUpdateParam}
                                 ></IJKControls>
                             )}
+
+                            <Divider mt="md" mb="md"></Divider>
+
+                            {/* Tooltips & Labels settings for structure tab. */}
+                            <CollapseTrigger
+                                title={"Global Tooltips & Labels"}
+                                size={"md"}
+                                expanded={tooltipsAndLabelsSectionExpanded}
+                                onClick={() => {
+                                    setTooltipsAndLabelsSectionExpanded(
+                                        (prev) => {
+                                            const nextState = !prev;
+                                            UiLocalStorageService.ViewBuilder.setExpandedStructureTooltipsAndLabelsSection(
+                                                asset.id,
+                                                viewKey,
+                                                nextState,
+                                            );
+                                            return nextState;
+                                        },
+                                    );
+                                }}
+                            ></CollapseTrigger>
+
+                            <Collapse
+                                expanded={tooltipsAndLabelsSectionExpanded}
+                            >
+                                <AssetBuilderCardSectionGroup
+                                    divider={true}
+                                    bottomMargin="sm"
+                                >
+                                    <div
+                                        style={{
+                                            fontSize: "0.85em",
+                                            fontWeight: 600,
+                                            marginBottom: "0.25em",
+                                        }}
+                                    >
+                                        Structure Tooltips
+                                    </div>
+                                    <SegmentedController<
+                                        "none" | "uri" | "source"
+                                    >
+                                        orientation="vertical"
+                                        size={"xs"}
+                                        value={getTooltipMode(viewModel)}
+                                        onChange={(value) => {
+                                            if (value === "none") {
+                                                onUpdateParam(
+                                                    "tooltip_from_uri",
+                                                    undefined,
+                                                    true,
+                                                );
+                                                onUpdateParam(
+                                                    "tooltip_from_source",
+                                                    undefined,
+                                                    true,
+                                                );
+                                            } else if (value === "uri") {
+                                                onUpdateParam(
+                                                    "tooltip_from_source",
+                                                    undefined,
+                                                    true,
+                                                );
+                                                onUpdateParam(
+                                                    "tooltip_from_uri",
+                                                    {
+                                                        uri: "",
+                                                        format: "json",
+                                                        schema: "whole_structure",
+                                                    },
+                                                    true,
+                                                );
+                                            } else if (value === "source") {
+                                                onUpdateParam(
+                                                    "tooltip_from_uri",
+                                                    undefined,
+                                                    true,
+                                                );
+                                                onUpdateParam(
+                                                    "tooltip_from_source",
+                                                    {
+                                                        category_name: "",
+                                                        field_name: "",
+                                                        schema: "whole_structure",
+                                                    },
+                                                    true,
+                                                );
+                                            }
+                                        }}
+                                        data={[
+                                            { label: "None", value: "none" },
+                                            { label: "From URI", value: "uri" },
+                                            {
+                                                label: "From Source",
+                                                value: "source",
+                                            },
+                                        ]}
+                                    />
+
+                                    {/* Tooltip from URI */}
+                                    {getTooltipMode(viewModel) === "uri" &&
+                                        viewModel.tooltip_from_uri && (
+                                            <>
+                                                <TextInput
+                                                    label="URI"
+                                                    size="xs"
+                                                    value={
+                                                        viewModel
+                                                            .tooltip_from_uri
+                                                            .uri
+                                                    }
+                                                    onChange={(e) =>
+                                                        onUpdateParam(
+                                                            "tooltip_from_uri",
+                                                            {
+                                                                ...viewModel.tooltip_from_uri!,
+                                                                uri: e
+                                                                    .currentTarget
+                                                                    .value,
+                                                            },
+                                                            false,
+                                                        )
+                                                    }
+                                                    onBlur={(e) =>
+                                                        onUpdateParam(
+                                                            "tooltip_from_uri",
+                                                            {
+                                                                ...viewModel.tooltip_from_uri!,
+                                                                uri: e
+                                                                    .currentTarget
+                                                                    .value,
+                                                            },
+                                                            true,
+                                                        )
+                                                    }
+                                                />
+                                                <Select
+                                                    label="Format"
+                                                    size="xs"
+                                                    data={[
+                                                        "cif",
+                                                        "bcif",
+                                                        "json",
+                                                    ]}
+                                                    value={
+                                                        viewModel
+                                                            .tooltip_from_uri
+                                                            .format
+                                                    }
+                                                    onChange={(val) =>
+                                                        val &&
+                                                        onUpdateParam(
+                                                            "tooltip_from_uri",
+                                                            {
+                                                                ...viewModel.tooltip_from_uri!,
+                                                                format: val as any,
+                                                            },
+                                                            true,
+                                                        )
+                                                    }
+                                                />
+                                                <Select
+                                                    label="Schema"
+                                                    size="xs"
+                                                    data={schemaOptions}
+                                                    value={
+                                                        viewModel
+                                                            .tooltip_from_uri
+                                                            .schema
+                                                    }
+                                                    onChange={(val) =>
+                                                        val &&
+                                                        onUpdateParam(
+                                                            "tooltip_from_uri",
+                                                            {
+                                                                ...viewModel.tooltip_from_uri!,
+                                                                schema: val as any,
+                                                            },
+                                                            true,
+                                                        )
+                                                    }
+                                                />
+                                                <TextInput
+                                                    label="Category Name (Optional)"
+                                                    size="xs"
+                                                    value={
+                                                        viewModel
+                                                            .tooltip_from_uri
+                                                            .category_name || ""
+                                                    }
+                                                    onChange={(e) =>
+                                                        onUpdateParam(
+                                                            "tooltip_from_uri",
+                                                            {
+                                                                ...viewModel.tooltip_from_uri!,
+                                                                category_name:
+                                                                    e
+                                                                        .currentTarget
+                                                                        .value,
+                                                            },
+                                                            false,
+                                                        )
+                                                    }
+                                                    onBlur={(e) =>
+                                                        onUpdateParam(
+                                                            "tooltip_from_uri",
+                                                            {
+                                                                ...viewModel.tooltip_from_uri!,
+                                                                category_name:
+                                                                    e
+                                                                        .currentTarget
+                                                                        .value ||
+                                                                    undefined,
+                                                            },
+                                                            true,
+                                                        )
+                                                    }
+                                                />
+                                                <TextInput
+                                                    label="Field Name (Optional)"
+                                                    size="xs"
+                                                    value={
+                                                        viewModel
+                                                            .tooltip_from_uri
+                                                            .field_name || ""
+                                                    }
+                                                    onChange={(e) =>
+                                                        onUpdateParam(
+                                                            "tooltip_from_uri",
+                                                            {
+                                                                ...viewModel.tooltip_from_uri!,
+                                                                field_name:
+                                                                    e
+                                                                        .currentTarget
+                                                                        .value,
+                                                            },
+                                                            false,
+                                                        )
+                                                    }
+                                                    onBlur={(e) =>
+                                                        onUpdateParam(
+                                                            "tooltip_from_uri",
+                                                            {
+                                                                ...viewModel.tooltip_from_uri!,
+                                                                field_name:
+                                                                    e
+                                                                        .currentTarget
+                                                                        .value ||
+                                                                    undefined,
+                                                            },
+                                                            true,
+                                                        )
+                                                    }
+                                                />
+                                            </>
+                                        )}
+
+                                    {/* Tooltip from Source */}
+                                    {getTooltipMode(viewModel) === "source" &&
+                                        viewModel.tooltip_from_source && (
+                                            <>
+                                                <Select
+                                                    label="Schema"
+                                                    size="xs"
+                                                    data={schemaOptions}
+                                                    value={
+                                                        viewModel
+                                                            .tooltip_from_source
+                                                            .schema
+                                                    }
+                                                    onChange={(val) =>
+                                                        val &&
+                                                        onUpdateParam(
+                                                            "tooltip_from_source",
+                                                            {
+                                                                ...viewModel.tooltip_from_source!,
+                                                                schema: val as any,
+                                                            },
+                                                            true,
+                                                        )
+                                                    }
+                                                />
+                                                <TextInput
+                                                    label="Category Name"
+                                                    size="xs"
+                                                    value={
+                                                        viewModel
+                                                            .tooltip_from_source
+                                                            .category_name
+                                                    }
+                                                    onChange={(e) =>
+                                                        onUpdateParam(
+                                                            "tooltip_from_source",
+                                                            {
+                                                                ...viewModel.tooltip_from_source!,
+                                                                category_name:
+                                                                    e
+                                                                        .currentTarget
+                                                                        .value,
+                                                            },
+                                                            false,
+                                                        )
+                                                    }
+                                                    onBlur={(e) =>
+                                                        onUpdateParam(
+                                                            "tooltip_from_source",
+                                                            {
+                                                                ...viewModel.tooltip_from_source!,
+                                                                category_name:
+                                                                    e
+                                                                        .currentTarget
+                                                                        .value,
+                                                            },
+                                                            true,
+                                                        )
+                                                    }
+                                                />
+                                                <TextInput
+                                                    label="Field Name"
+                                                    size="xs"
+                                                    value={
+                                                        viewModel
+                                                            .tooltip_from_source
+                                                            .field_name
+                                                    }
+                                                    onChange={(e) =>
+                                                        onUpdateParam(
+                                                            "tooltip_from_source",
+                                                            {
+                                                                ...viewModel.tooltip_from_source!,
+                                                                field_name:
+                                                                    e
+                                                                        .currentTarget
+                                                                        .value,
+                                                            },
+                                                            false,
+                                                        )
+                                                    }
+                                                    onBlur={(e) =>
+                                                        onUpdateParam(
+                                                            "tooltip_from_source",
+                                                            {
+                                                                ...viewModel.tooltip_from_source!,
+                                                                field_name:
+                                                                    e
+                                                                        .currentTarget
+                                                                        .value,
+                                                            },
+                                                            true,
+                                                        )
+                                                    }
+                                                />
+                                            </>
+                                        )}
+                                </AssetBuilderCardSectionGroup>
+
+                                <AssetBuilderCardSectionGroup divider={false}>
+                                    <div
+                                        style={{
+                                            fontSize: "0.85em",
+                                            fontWeight: 600,
+                                            marginBottom: "0.25em",
+                                        }}
+                                    >
+                                        Structure Labels
+                                    </div>
+                                    <SegmentedController<
+                                        "none" | "uri" | "source"
+                                    >
+                                        orientation="vertical"
+                                        size={"xs"}
+                                        value={getLabelMode(viewModel)}
+                                        onChange={(value) => {
+                                            if (value === "none") {
+                                                onUpdateParam(
+                                                    "label_from_uri",
+                                                    undefined,
+                                                    true,
+                                                );
+                                                onUpdateParam(
+                                                    "label_from_source",
+                                                    undefined,
+                                                    true,
+                                                );
+                                            } else if (value === "uri") {
+                                                onUpdateParam(
+                                                    "label_from_source",
+                                                    undefined,
+                                                    true,
+                                                );
+                                                onUpdateParam(
+                                                    "label_from_uri",
+                                                    {
+                                                        uri: "",
+                                                        format: "json",
+                                                        schema: "whole_structure",
+                                                    },
+                                                    true,
+                                                );
+                                            } else if (value === "source") {
+                                                onUpdateParam(
+                                                    "label_from_uri",
+                                                    undefined,
+                                                    true,
+                                                );
+                                                onUpdateParam(
+                                                    "label_from_source",
+                                                    {
+                                                        category_name: "",
+                                                        field_name: "",
+                                                        schema: "whole_structure",
+                                                    },
+                                                    true,
+                                                );
+                                            }
+                                        }}
+                                        data={[
+                                            { label: "None", value: "none" },
+                                            { label: "From URI", value: "uri" },
+                                            {
+                                                label: "From Source",
+                                                value: "source",
+                                            },
+                                        ]}
+                                    />
+
+                                    {/* Label from URI */}
+                                    {getLabelMode(viewModel) === "uri" &&
+                                        viewModel.label_from_uri && (
+                                            <>
+                                                <TextInput
+                                                    label="URI"
+                                                    size="xs"
+                                                    value={
+                                                        viewModel.label_from_uri
+                                                            .uri
+                                                    }
+                                                    onChange={(e) =>
+                                                        onUpdateParam(
+                                                            "label_from_uri",
+                                                            {
+                                                                ...viewModel.label_from_uri!,
+                                                                uri: e
+                                                                    .currentTarget
+                                                                    .value,
+                                                            },
+                                                            false,
+                                                        )
+                                                    }
+                                                    onBlur={(e) =>
+                                                        onUpdateParam(
+                                                            "label_from_uri",
+                                                            {
+                                                                ...viewModel.label_from_uri!,
+                                                                uri: e
+                                                                    .currentTarget
+                                                                    .value,
+                                                            },
+                                                            true,
+                                                        )
+                                                    }
+                                                />
+                                                <Select
+                                                    label="Format"
+                                                    size="xs"
+                                                    data={[
+                                                        "cif",
+                                                        "bcif",
+                                                        "json",
+                                                    ]}
+                                                    value={
+                                                        viewModel.label_from_uri
+                                                            .format
+                                                    }
+                                                    onChange={(val) =>
+                                                        val &&
+                                                        onUpdateParam(
+                                                            "label_from_uri",
+                                                            {
+                                                                ...viewModel.label_from_uri!,
+                                                                format: val as any,
+                                                            },
+                                                            true,
+                                                        )
+                                                    }
+                                                />
+                                                <Select
+                                                    label="Schema"
+                                                    size="xs"
+                                                    data={schemaOptions}
+                                                    value={
+                                                        viewModel.label_from_uri
+                                                            .schema
+                                                    }
+                                                    onChange={(val) =>
+                                                        val &&
+                                                        onUpdateParam(
+                                                            "label_from_uri",
+                                                            {
+                                                                ...viewModel.label_from_uri!,
+                                                                schema: val as any,
+                                                            },
+                                                            true,
+                                                        )
+                                                    }
+                                                />
+                                                <TextInput
+                                                    label="Category Name (Optional)"
+                                                    size="xs"
+                                                    value={
+                                                        viewModel.label_from_uri
+                                                            .category_name || ""
+                                                    }
+                                                    onChange={(e) =>
+                                                        onUpdateParam(
+                                                            "label_from_uri",
+                                                            {
+                                                                ...viewModel.label_from_uri!,
+                                                                category_name:
+                                                                    e
+                                                                        .currentTarget
+                                                                        .value,
+                                                            },
+                                                            false,
+                                                        )
+                                                    }
+                                                    onBlur={(e) =>
+                                                        onUpdateParam(
+                                                            "label_from_uri",
+                                                            {
+                                                                ...viewModel.label_from_uri!,
+                                                                category_name:
+                                                                    e
+                                                                        .currentTarget
+                                                                        .value ||
+                                                                    undefined,
+                                                            },
+                                                            true,
+                                                        )
+                                                    }
+                                                />
+                                                <TextInput
+                                                    label="Field Name (Optional)"
+                                                    size="xs"
+                                                    value={
+                                                        viewModel.label_from_uri
+                                                            .field_name || ""
+                                                    }
+                                                    onChange={(e) =>
+                                                        onUpdateParam(
+                                                            "label_from_uri",
+                                                            {
+                                                                ...viewModel.label_from_uri!,
+                                                                field_name:
+                                                                    e
+                                                                        .currentTarget
+                                                                        .value,
+                                                            },
+                                                            false,
+                                                        )
+                                                    }
+                                                    onBlur={(e) =>
+                                                        onUpdateParam(
+                                                            "label_from_uri",
+                                                            {
+                                                                ...viewModel.label_from_uri!,
+                                                                field_name:
+                                                                    e
+                                                                        .currentTarget
+                                                                        .value ||
+                                                                    undefined,
+                                                            },
+                                                            true,
+                                                        )
+                                                    }
+                                                />
+                                            </>
+                                        )}
+
+                                    {/* Label from Source */}
+                                    {getLabelMode(viewModel) === "source" &&
+                                        viewModel.label_from_source && (
+                                            <>
+                                                <Select
+                                                    label="Schema"
+                                                    size="xs"
+                                                    data={schemaOptions}
+                                                    value={
+                                                        viewModel
+                                                            .label_from_source
+                                                            .schema
+                                                    }
+                                                    onChange={(val) =>
+                                                        val &&
+                                                        onUpdateParam(
+                                                            "label_from_source",
+                                                            {
+                                                                ...viewModel.label_from_source!,
+                                                                schema: val as any,
+                                                            },
+                                                            true,
+                                                        )
+                                                    }
+                                                />
+                                                <TextInput
+                                                    label="Category Name"
+                                                    size="xs"
+                                                    value={
+                                                        viewModel
+                                                            .label_from_source
+                                                            .category_name
+                                                    }
+                                                    onChange={(e) =>
+                                                        onUpdateParam(
+                                                            "label_from_source",
+                                                            {
+                                                                ...viewModel.label_from_source!,
+                                                                category_name:
+                                                                    e
+                                                                        .currentTarget
+                                                                        .value,
+                                                            },
+                                                            false,
+                                                        )
+                                                    }
+                                                    onBlur={(e) =>
+                                                        onUpdateParam(
+                                                            "label_from_source",
+                                                            {
+                                                                ...viewModel.label_from_source!,
+                                                                category_name:
+                                                                    e
+                                                                        .currentTarget
+                                                                        .value,
+                                                            },
+                                                            true,
+                                                        )
+                                                    }
+                                                />
+                                                <TextInput
+                                                    label="Field Name"
+                                                    size="xs"
+                                                    value={
+                                                        viewModel
+                                                            .label_from_source
+                                                            .field_name
+                                                    }
+                                                    onChange={(e) =>
+                                                        onUpdateParam(
+                                                            "label_from_source",
+                                                            {
+                                                                ...viewModel.label_from_source!,
+                                                                field_name:
+                                                                    e
+                                                                        .currentTarget
+                                                                        .value,
+                                                            },
+                                                            false,
+                                                        )
+                                                    }
+                                                    onBlur={(e) =>
+                                                        onUpdateParam(
+                                                            "label_from_source",
+                                                            {
+                                                                ...viewModel.label_from_source!,
+                                                                field_name:
+                                                                    e
+                                                                        .currentTarget
+                                                                        .value,
+                                                            },
+                                                            true,
+                                                        )
+                                                    }
+                                                />
+                                            </>
+                                        )}
+                                </AssetBuilderCardSectionGroup>
+                            </Collapse>
+
+                            {/* Transform settings for structure tab. */}
+                            <CollapseTrigger
+                                title={"Global transform"}
+                                size={"md"}
+                                expanded={transformSectionExpanded}
+                                onClick={() => {
+                                    setTransformSectionExpanded((prev) => {
+                                        const nextState = !prev;
+                                        UiLocalStorageService.ViewBuilder.setExpandedStructureTransformSection(
+                                            asset.id,
+                                            viewKey,
+                                            nextState,
+                                        );
+                                        return nextState;
+                                    });
+                                }}
+                            ></CollapseTrigger>
+
+                            <Collapse expanded={transformSectionExpanded}>
+                                <StructureTransformControls
+                                    viewModel={viewModel}
+                                    onUpdateParam={onUpdateParam}
+                                ></StructureTransformControls>
+                            </Collapse>
                         </AssetBuilderCardSectionGroup>
                     </Collapse>
                 </AssetBuilderCardSectionGroup>
-            </Collapse>
-
-            {/* Tooltips & Labels settings for structure tab. */}
-            <CollapseTrigger
-                title={"Global Tooltips & Labels"}
-                size={"md"}
-                expanded={tooltipsAndLabelsSectionExpanded}
-                onClick={() => {
-                    setTooltipsAndLabelsSectionExpanded((prev) => {
-                        const nextState = !prev;
-                        UiLocalStorageService.ViewBuilder.setExpandedStructureTooltipsAndLabelsSection(
-                            asset.id,
-                            viewKey,
-                            nextState,
-                        );
-                        return nextState;
-                    });
-                }}
-            ></CollapseTrigger>
-
-            <Collapse expanded={tooltipsAndLabelsSectionExpanded}>
-                <AssetBuilderCardSectionGroup divider={true} bottomMargin="sm">
-                    <div
-                        style={{
-                            fontSize: "0.85em",
-                            fontWeight: 600,
-                            marginBottom: "0.25em",
-                        }}
-                    >
-                        Structure Tooltips
-                    </div>
-                    <SegmentedController<"none" | "uri" | "source">
-                        orientation="vertical"
-                        size={"xs"}
-                        value={getTooltipMode(viewModel)}
-                        onChange={(value) => {
-                            if (value === "none") {
-                                onUpdateParam(
-                                    "tooltip_from_uri",
-                                    undefined,
-                                    true,
-                                );
-                                onUpdateParam(
-                                    "tooltip_from_source",
-                                    undefined,
-                                    true,
-                                );
-                            } else if (value === "uri") {
-                                onUpdateParam(
-                                    "tooltip_from_source",
-                                    undefined,
-                                    true,
-                                );
-                                onUpdateParam(
-                                    "tooltip_from_uri",
-                                    {
-                                        uri: "",
-                                        format: "json",
-                                        schema: "whole_structure",
-                                    },
-                                    true,
-                                );
-                            } else if (value === "source") {
-                                onUpdateParam(
-                                    "tooltip_from_uri",
-                                    undefined,
-                                    true,
-                                );
-                                onUpdateParam(
-                                    "tooltip_from_source",
-                                    {
-                                        category_name: "",
-                                        field_name: "",
-                                        schema: "whole_structure",
-                                    },
-                                    true,
-                                );
-                            }
-                        }}
-                        data={[
-                            { label: "None", value: "none" },
-                            { label: "From URI", value: "uri" },
-                            {
-                                label: "From Source",
-                                value: "source",
-                            },
-                        ]}
-                    />
-
-                    {/* Tooltip from URI */}
-                    {getTooltipMode(viewModel) === "uri" &&
-                        viewModel.tooltip_from_uri && (
-                            <>
-                                <TextInput
-                                    label="URI"
-                                    size="xs"
-                                    value={viewModel.tooltip_from_uri.uri}
-                                    onChange={(e) =>
-                                        onUpdateParam(
-                                            "tooltip_from_uri",
-                                            {
-                                                ...viewModel.tooltip_from_uri!,
-                                                uri: e.currentTarget.value,
-                                            },
-                                            false,
-                                        )
-                                    }
-                                    onBlur={(e) =>
-                                        onUpdateParam(
-                                            "tooltip_from_uri",
-                                            {
-                                                ...viewModel.tooltip_from_uri!,
-                                                uri: e.currentTarget.value,
-                                            },
-                                            true,
-                                        )
-                                    }
-                                />
-                                <Select
-                                    label="Format"
-                                    size="xs"
-                                    data={["cif", "bcif", "json"]}
-                                    value={viewModel.tooltip_from_uri.format}
-                                    onChange={(val) =>
-                                        val &&
-                                        onUpdateParam(
-                                            "tooltip_from_uri",
-                                            {
-                                                ...viewModel.tooltip_from_uri!,
-                                                format: val as any,
-                                            },
-                                            true,
-                                        )
-                                    }
-                                />
-                                <Select
-                                    label="Schema"
-                                    size="xs"
-                                    data={schemaOptions}
-                                    value={viewModel.tooltip_from_uri.schema}
-                                    onChange={(val) =>
-                                        val &&
-                                        onUpdateParam(
-                                            "tooltip_from_uri",
-                                            {
-                                                ...viewModel.tooltip_from_uri!,
-                                                schema: val as any,
-                                            },
-                                            true,
-                                        )
-                                    }
-                                />
-                                <TextInput
-                                    label="Category Name (Optional)"
-                                    size="xs"
-                                    value={
-                                        viewModel.tooltip_from_uri
-                                            .category_name || ""
-                                    }
-                                    onChange={(e) =>
-                                        onUpdateParam(
-                                            "tooltip_from_uri",
-                                            {
-                                                ...viewModel.tooltip_from_uri!,
-                                                category_name:
-                                                    e.currentTarget.value,
-                                            },
-                                            false,
-                                        )
-                                    }
-                                    onBlur={(e) =>
-                                        onUpdateParam(
-                                            "tooltip_from_uri",
-                                            {
-                                                ...viewModel.tooltip_from_uri!,
-                                                category_name:
-                                                    e.currentTarget.value ||
-                                                    undefined,
-                                            },
-                                            true,
-                                        )
-                                    }
-                                />
-                                <TextInput
-                                    label="Field Name (Optional)"
-                                    size="xs"
-                                    value={
-                                        viewModel.tooltip_from_uri.field_name ||
-                                        ""
-                                    }
-                                    onChange={(e) =>
-                                        onUpdateParam(
-                                            "tooltip_from_uri",
-                                            {
-                                                ...viewModel.tooltip_from_uri!,
-                                                field_name:
-                                                    e.currentTarget.value,
-                                            },
-                                            false,
-                                        )
-                                    }
-                                    onBlur={(e) =>
-                                        onUpdateParam(
-                                            "tooltip_from_uri",
-                                            {
-                                                ...viewModel.tooltip_from_uri!,
-                                                field_name:
-                                                    e.currentTarget.value ||
-                                                    undefined,
-                                            },
-                                            true,
-                                        )
-                                    }
-                                />
-                            </>
-                        )}
-
-                    {/* Tooltip from Source */}
-                    {getTooltipMode(viewModel) === "source" &&
-                        viewModel.tooltip_from_source && (
-                            <>
-                                <Select
-                                    label="Schema"
-                                    size="xs"
-                                    data={schemaOptions}
-                                    value={viewModel.tooltip_from_source.schema}
-                                    onChange={(val) =>
-                                        val &&
-                                        onUpdateParam(
-                                            "tooltip_from_source",
-                                            {
-                                                ...viewModel.tooltip_from_source!,
-                                                schema: val as any,
-                                            },
-                                            true,
-                                        )
-                                    }
-                                />
-                                <TextInput
-                                    label="Category Name"
-                                    size="xs"
-                                    value={
-                                        viewModel.tooltip_from_source
-                                            .category_name
-                                    }
-                                    onChange={(e) =>
-                                        onUpdateParam(
-                                            "tooltip_from_source",
-                                            {
-                                                ...viewModel.tooltip_from_source!,
-                                                category_name:
-                                                    e.currentTarget.value,
-                                            },
-                                            false,
-                                        )
-                                    }
-                                    onBlur={(e) =>
-                                        onUpdateParam(
-                                            "tooltip_from_source",
-                                            {
-                                                ...viewModel.tooltip_from_source!,
-                                                category_name:
-                                                    e.currentTarget.value,
-                                            },
-                                            true,
-                                        )
-                                    }
-                                />
-                                <TextInput
-                                    label="Field Name"
-                                    size="xs"
-                                    value={
-                                        viewModel.tooltip_from_source.field_name
-                                    }
-                                    onChange={(e) =>
-                                        onUpdateParam(
-                                            "tooltip_from_source",
-                                            {
-                                                ...viewModel.tooltip_from_source!,
-                                                field_name:
-                                                    e.currentTarget.value,
-                                            },
-                                            false,
-                                        )
-                                    }
-                                    onBlur={(e) =>
-                                        onUpdateParam(
-                                            "tooltip_from_source",
-                                            {
-                                                ...viewModel.tooltip_from_source!,
-                                                field_name:
-                                                    e.currentTarget.value,
-                                            },
-                                            true,
-                                        )
-                                    }
-                                />
-                            </>
-                        )}
-                </AssetBuilderCardSectionGroup>
-
-                <AssetBuilderCardSectionGroup divider={false}>
-                    <div
-                        style={{
-                            fontSize: "0.85em",
-                            fontWeight: 600,
-                            marginBottom: "0.25em",
-                        }}
-                    >
-                        Structure Labels
-                    </div>
-                    <SegmentedController<"none" | "uri" | "source">
-                        orientation="vertical"
-                        size={"xs"}
-                        value={getLabelMode(viewModel)}
-                        onChange={(value) => {
-                            if (value === "none") {
-                                onUpdateParam(
-                                    "label_from_uri",
-                                    undefined,
-                                    true,
-                                );
-                                onUpdateParam(
-                                    "label_from_source",
-                                    undefined,
-                                    true,
-                                );
-                            } else if (value === "uri") {
-                                onUpdateParam(
-                                    "label_from_source",
-                                    undefined,
-                                    true,
-                                );
-                                onUpdateParam(
-                                    "label_from_uri",
-                                    {
-                                        uri: "",
-                                        format: "json",
-                                        schema: "whole_structure",
-                                    },
-                                    true,
-                                );
-                            } else if (value === "source") {
-                                onUpdateParam(
-                                    "label_from_uri",
-                                    undefined,
-                                    true,
-                                );
-                                onUpdateParam(
-                                    "label_from_source",
-                                    {
-                                        category_name: "",
-                                        field_name: "",
-                                        schema: "whole_structure",
-                                    },
-                                    true,
-                                );
-                            }
-                        }}
-                        data={[
-                            { label: "None", value: "none" },
-                            { label: "From URI", value: "uri" },
-                            {
-                                label: "From Source",
-                                value: "source",
-                            },
-                        ]}
-                    />
-
-                    {/* Label from URI */}
-                    {getLabelMode(viewModel) === "uri" &&
-                        viewModel.label_from_uri && (
-                            <>
-                                <TextInput
-                                    label="URI"
-                                    size="xs"
-                                    value={viewModel.label_from_uri.uri}
-                                    onChange={(e) =>
-                                        onUpdateParam(
-                                            "label_from_uri",
-                                            {
-                                                ...viewModel.label_from_uri!,
-                                                uri: e.currentTarget.value,
-                                            },
-                                            false,
-                                        )
-                                    }
-                                    onBlur={(e) =>
-                                        onUpdateParam(
-                                            "label_from_uri",
-                                            {
-                                                ...viewModel.label_from_uri!,
-                                                uri: e.currentTarget.value,
-                                            },
-                                            true,
-                                        )
-                                    }
-                                />
-                                <Select
-                                    label="Format"
-                                    size="xs"
-                                    data={["cif", "bcif", "json"]}
-                                    value={viewModel.label_from_uri.format}
-                                    onChange={(val) =>
-                                        val &&
-                                        onUpdateParam(
-                                            "label_from_uri",
-                                            {
-                                                ...viewModel.label_from_uri!,
-                                                format: val as any,
-                                            },
-                                            true,
-                                        )
-                                    }
-                                />
-                                <Select
-                                    label="Schema"
-                                    size="xs"
-                                    data={schemaOptions}
-                                    value={viewModel.label_from_uri.schema}
-                                    onChange={(val) =>
-                                        val &&
-                                        onUpdateParam(
-                                            "label_from_uri",
-                                            {
-                                                ...viewModel.label_from_uri!,
-                                                schema: val as any,
-                                            },
-                                            true,
-                                        )
-                                    }
-                                />
-                                <TextInput
-                                    label="Category Name (Optional)"
-                                    size="xs"
-                                    value={
-                                        viewModel.label_from_uri
-                                            .category_name || ""
-                                    }
-                                    onChange={(e) =>
-                                        onUpdateParam(
-                                            "label_from_uri",
-                                            {
-                                                ...viewModel.label_from_uri!,
-                                                category_name:
-                                                    e.currentTarget.value,
-                                            },
-                                            false,
-                                        )
-                                    }
-                                    onBlur={(e) =>
-                                        onUpdateParam(
-                                            "label_from_uri",
-                                            {
-                                                ...viewModel.label_from_uri!,
-                                                category_name:
-                                                    e.currentTarget.value ||
-                                                    undefined,
-                                            },
-                                            true,
-                                        )
-                                    }
-                                />
-                                <TextInput
-                                    label="Field Name (Optional)"
-                                    size="xs"
-                                    value={
-                                        viewModel.label_from_uri.field_name ||
-                                        ""
-                                    }
-                                    onChange={(e) =>
-                                        onUpdateParam(
-                                            "label_from_uri",
-                                            {
-                                                ...viewModel.label_from_uri!,
-                                                field_name:
-                                                    e.currentTarget.value,
-                                            },
-                                            false,
-                                        )
-                                    }
-                                    onBlur={(e) =>
-                                        onUpdateParam(
-                                            "label_from_uri",
-                                            {
-                                                ...viewModel.label_from_uri!,
-                                                field_name:
-                                                    e.currentTarget.value ||
-                                                    undefined,
-                                            },
-                                            true,
-                                        )
-                                    }
-                                />
-                            </>
-                        )}
-
-                    {/* Label from Source */}
-                    {getLabelMode(viewModel) === "source" &&
-                        viewModel.label_from_source && (
-                            <>
-                                <Select
-                                    label="Schema"
-                                    size="xs"
-                                    data={schemaOptions}
-                                    value={viewModel.label_from_source.schema}
-                                    onChange={(val) =>
-                                        val &&
-                                        onUpdateParam(
-                                            "label_from_source",
-                                            {
-                                                ...viewModel.label_from_source!,
-                                                schema: val as any,
-                                            },
-                                            true,
-                                        )
-                                    }
-                                />
-                                <TextInput
-                                    label="Category Name"
-                                    size="xs"
-                                    value={
-                                        viewModel.label_from_source
-                                            .category_name
-                                    }
-                                    onChange={(e) =>
-                                        onUpdateParam(
-                                            "label_from_source",
-                                            {
-                                                ...viewModel.label_from_source!,
-                                                category_name:
-                                                    e.currentTarget.value,
-                                            },
-                                            false,
-                                        )
-                                    }
-                                    onBlur={(e) =>
-                                        onUpdateParam(
-                                            "label_from_source",
-                                            {
-                                                ...viewModel.label_from_source!,
-                                                category_name:
-                                                    e.currentTarget.value,
-                                            },
-                                            true,
-                                        )
-                                    }
-                                />
-                                <TextInput
-                                    label="Field Name"
-                                    size="xs"
-                                    value={
-                                        viewModel.label_from_source.field_name
-                                    }
-                                    onChange={(e) =>
-                                        onUpdateParam(
-                                            "label_from_source",
-                                            {
-                                                ...viewModel.label_from_source!,
-                                                field_name:
-                                                    e.currentTarget.value,
-                                            },
-                                            false,
-                                        )
-                                    }
-                                    onBlur={(e) =>
-                                        onUpdateParam(
-                                            "label_from_source",
-                                            {
-                                                ...viewModel.label_from_source!,
-                                                field_name:
-                                                    e.currentTarget.value,
-                                            },
-                                            true,
-                                        )
-                                    }
-                                />
-                            </>
-                        )}
-                </AssetBuilderCardSectionGroup>
-            </Collapse>
-
-            {/* Transform settings for structure tab. */}
-            <CollapseTrigger
-                title={"Global transform"}
-                size={"md"}
-                expanded={transformSectionExpanded}
-                onClick={() => {
-                    setTransformSectionExpanded((prev) => {
-                        const nextState = !prev;
-                        UiLocalStorageService.ViewBuilder.setExpandedStructureTransformSection(
-                            asset.id,
-                            viewKey,
-                            nextState,
-                        );
-                        return nextState;
-                    });
-                }}
-            ></CollapseTrigger>
-
-            <Collapse expanded={transformSectionExpanded}>
-                <StructureTransformControls
-                    viewModel={viewModel}
-                    onUpdateParam={onUpdateParam}
-                ></StructureTransformControls>
             </Collapse>
 
             {/* Components settings for Structure tab. */}
