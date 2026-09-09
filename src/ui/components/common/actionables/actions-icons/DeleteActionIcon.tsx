@@ -10,7 +10,7 @@ import { IconTrash } from "@tabler/icons-react";
 interface DeleteActionIconProps {
     tooltip?: string;
     enabled?: boolean;
-    onClick?: (e: React.MouseEvent) => void;
+    onClick?: (e: React.MouseEvent<HTMLElement>) => void;
 }
 
 export function DeleteActionIcon(props: DeleteActionIconProps) {
@@ -19,6 +19,7 @@ export function DeleteActionIcon(props: DeleteActionIconProps) {
     // Render the component.
     return (
         <ActionIcon
+            component="div"
             disabled={!enabled}
             variant="subtle"
             color="red"
