@@ -12,7 +12,6 @@ import {
     Checkbox,
     Collapse,
     ColorInput,
-    Divider,
     Group,
     NumberInput,
     Select,
@@ -21,6 +20,7 @@ import { getAllParserTypes } from "../../../../../config/assetsDefinitions";
 import { pushWarningNotification } from "../../../../../services/NotificationService";
 import type { VolumeViewModel } from "../../../models/MvsViewModels";
 import { VolumeTransformControls } from "./VolumeTransformControls";
+import { AssetBuilderCardSectionGroup } from "./AssetBuilderCardSectionGroup";
 
 type VolumeTabProps = {
     viewKey: string;
@@ -82,14 +82,7 @@ export function VolumeTab({
             ></CollapseTrigger>
 
             <Collapse expanded={generalSectionExpanded}>
-                <div
-                    style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: "1em",
-                        paddingBottom: "1em",
-                    }}
-                >
+                <AssetBuilderCardSectionGroup divider={true}>
                     <Select
                         label="Format"
                         disabled
@@ -138,9 +131,7 @@ export function VolumeTab({
                             )
                         }
                     />
-
-                    <Divider mb="md" />
-                </div>
+                </AssetBuilderCardSectionGroup>
             </Collapse>
 
             {/* Representation settings for volume tab. */}
@@ -162,14 +153,7 @@ export function VolumeTab({
             ></CollapseTrigger>
 
             <Collapse expanded={representationSectionExpanded}>
-                <div
-                    style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: "1em",
-                        paddingBottom: "1em",
-                    }}
-                >
+                <AssetBuilderCardSectionGroup divider={true}>
                     <Group mt="xs">
                         <Checkbox
                             label="Show wireframe"
@@ -212,9 +196,7 @@ export function VolumeTab({
                             onUpdateParam("opacity", val, true)
                         }
                     ></AlphaSlider>
-
-                    <Divider mb="md" />
-                </div>
+                </AssetBuilderCardSectionGroup>
             </Collapse>
 
             {/* Transform settings for volume tab. */}
