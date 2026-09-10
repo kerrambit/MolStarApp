@@ -48,6 +48,15 @@ interface AssetBuilderCardProps {
         val: ComponentEntry[keyof ComponentEntry],
         syncToMolstar: boolean,
     ) => Promise<void>;
+    onUpdateStructureFields: (
+        fields: Partial<StructureViewModel>,
+        syncToMolstar: boolean,
+    ) => Promise<void>;
+    onUpdateStructureComponentFields: (
+        componentId: string,
+        fields: Partial<ComponentEntry>,
+        syncToMolstar: boolean,
+    ) => Promise<void>;
 }
 
 export function AssetBuilderCard({
@@ -63,6 +72,8 @@ export function AssetBuilderCard({
     onUpdateVolumeParam,
     onUpdateStructureParam,
     onUpdateStructureComponentParam,
+    onUpdateStructureFields,
+    onUpdateStructureComponentFields,
 }: AssetBuilderCardProps) {
     // Store active tab.
     const [activeTab, setActiveTab] = useState<TabType>(() => {
@@ -179,6 +190,10 @@ export function AssetBuilderCard({
                             onUpdateParam={onUpdateStructureParam}
                             onUpdateStructureComponentParam={
                                 onUpdateStructureComponentParam
+                            }
+                            onUpdateFields={onUpdateStructureFields}
+                            onUpdateStructureComponentFields={
+                                onUpdateStructureComponentFields
                             }
                         ></StructureTab>
                     )}

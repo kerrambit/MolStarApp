@@ -445,6 +445,157 @@ export function useViewBuilder(viewKey: string) {
         }
     };
 
+    /**
+     * Function which updates MULTIPLE structure view model fields atomically and optionally syncs to Molstar.
+     * Use this instead of several sequential `updateStructureViewModelForAsset` calls whenever more than one
+     * field must change together (e.g. switching tooltip/label mode) - sequential single-field calls race
+     * against each other (each reads the view model before the previous one's setState has landed) and can
+     * silently drop all but one of the changes.
+     */
+    const updateStructureViewModelFieldsForAsset = async (
+        assetId: AssetId,
+        fields: Partial<StructureViewModel>,
+        syncToMolstar: boolean,
+    ) => {
+        const updatedVm: StructureViewModel = {
+            ...getStructureViewModelForAsset(assetId),
+            ...fields,
+        };
+
+        setStructureViewModels((prev) => ({ ...prev, [assetId]: updatedVm }));
+
+        if (
+            syncToMolstar &&
+            selectedAssetIds.includes(assetId) &&
+            regime.kind === "viewing"
+        ) {
+            const updatedTree: MVSData_States = {
+                ...regime.history.current().stateTree,
+                snapshots: regime.history
+                    .current()
+                    .stateTree.snapshots.map((snap) => {
+                        if (snap.metadata.key === viewKey) {
+                            const extension =
+                                getAsset(assetId)?.extension || "unknown";
+                            const format =
+                                getAllSupportedAssetsParsers()[extension] ??
+                                "bcif";
+                            const newNode = getStructureNode(assetId, {
+                                ...updatedVm,
+                                format,
+                            });
+
+                            return {
+                                ...snap,
+                                root: replaceAssetNodeInRoot(
+                                    snap.root,
+                                    assetId,
+                                    newNode,
+                                ),
+                            };
+                        }
+                        return snap;
+                    }),
+            };
+
+            regime.commitStateTree(
+                updatedTree,
+                `Updated multiple fields for view "${view?.metadata.title}" (${viewKey}).`,
+            );
+
+            const result = await reloadMolstarAndRestoreIndex(
+                { key: viewKey },
+                Array.from(assets.values()),
+                updatedTree,
+            );
+            if (result instanceof Error) {
+                pushErrorNotification(
+                    `Failed to apply changes! For more information, check the logs.`,
+                );
+                loggerUi.error(result.message);
+                regime.undo();
+            }
+        }
+    };
+
+    /**
+     * Function which updates MULTIPLE structure's component entiry fields atomically and optionally syncs to Molstar.
+     * Use this instead of several sequential `updateStructureComponentViewModel` calls whenever more than one
+     * field must change together (e.g. switching tooltip/label mode) - sequential single-field calls race
+     * against each other (each reads the view model before the previous one's setState has landed) and can
+     * silently drop all but one of the changes.
+     */
+    const updateStructureComponentViewModelFields = async (
+        assetId: AssetId,
+        componentId: string,
+        fields: Partial<ComponentEntry>,
+        syncToMolstar: boolean,
+    ) => {
+        const currentVm = getStructureViewModelForAsset(assetId);
+        const updatedComponents = currentVm.components.map((comp) =>
+            comp.id === componentId ? { ...comp, ...fields } : comp,
+        );
+        const updatedVm: StructureViewModel = {
+            ...currentVm,
+            components: updatedComponents,
+        };
+
+        setStructureViewModels((prev) => ({ ...prev, [assetId]: updatedVm }));
+
+        if (
+            syncToMolstar &&
+            selectedAssetIds.includes(assetId) &&
+            regime.kind === "viewing"
+        ) {
+            const updatedTree: MVSData_States = {
+                ...regime.history.current().stateTree,
+                snapshots: regime.history
+                    .current()
+                    .stateTree.snapshots.map((snap) => {
+                        if (snap.metadata.key === viewKey) {
+                            const extension =
+                                getAsset(assetId)?.extension || "unknown";
+                            const format =
+                                getAllSupportedAssetsParsers()[extension] ??
+                                "bcif";
+                            const newNode = getStructureNode(assetId, {
+                                ...updatedVm,
+                                format,
+                            });
+
+                            return {
+                                ...snap,
+                                root: replaceAssetNodeInRoot(
+                                    snap.root,
+                                    assetId,
+                                    newNode,
+                                ),
+                            };
+                        }
+                        return snap;
+                    }),
+            };
+
+            regime.commitStateTree(
+                updatedTree,
+                `Updated component "${componentId}" fields for view "${view?.metadata.title}" (${viewKey}).`,
+            );
+
+            const result = await reloadMolstarAndRestoreIndex(
+                { key: viewKey },
+                Array.from(assets.values()),
+                updatedTree,
+            );
+            if (result instanceof Error) {
+                pushErrorNotification(
+                    `Failed to apply component changes! For more information, check the logs.`,
+                );
+                loggerUi.error(result.message);
+                regime.undo();
+            }
+        }
+    };
+
     // Handler when asset is toggled.
     const handleAssetToggle = async (
         toggledAssetId: string,
@@ -576,6 +727,8 @@ export function useViewBuilder(viewKey: string) {
         updateVolumeViewModelForAsset,
         updateStructureViewModelForAsset,
         updateStructureComponentViewModel,
+        updateStructureViewModelFieldsForAsset,
+        updateStructureComponentViewModelFields,
         handleAssetToggle,
     };
 }

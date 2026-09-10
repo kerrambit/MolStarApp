@@ -98,6 +98,15 @@ type StructureTabProps = {
         val: ComponentEntry[keyof ComponentEntry],
         syncToMolstar: boolean,
     ) => Promise<void>;
+    onUpdateFields: (
+        fields: Partial<StructureViewModel>,
+        syncToMolstar: boolean,
+    ) => Promise<void>;
+    onUpdateStructureComponentFields: (
+        componentId: string,
+        fields: Partial<ComponentEntry>,
+        syncToMolstar: boolean,
+    ) => Promise<void>;
 };
 
 export function StructureTab({
@@ -106,6 +115,8 @@ export function StructureTab({
     viewModel,
     onUpdateParam,
     onUpdateStructureComponentParam,
+    onUpdateFields,
+    onUpdateStructureComponentFields,
 }: StructureTabProps) {
     // Store the currently selected component ID, defaulting to the first component if available.
     const [currentComponentId, setCurrentComponentId] = useState<
@@ -652,45 +663,40 @@ export function StructureTab({
                                         value={getTooltipMode(viewModel)}
                                         onChange={(value) => {
                                             if (value === "none") {
-                                                onUpdateParam(
-                                                    "tooltip_from_uri",
-                                                    undefined,
-                                                    true,
-                                                );
-                                                onUpdateParam(
-                                                    "tooltip_from_source",
-                                                    undefined,
-                                                    true,
+                                                onUpdateFields(
+                                                    {
+                                                        tooltip_from_uri:
+                                                            undefined,
+                                                        tooltip_from_source:
+                                                            undefined,
+                                                    },
+                                                    false,
                                                 );
                                             } else if (value === "uri") {
-                                                onUpdateParam(
-                                                    "tooltip_from_source",
-                                                    undefined,
-                                                    true,
-                                                );
-                                                onUpdateParam(
-                                                    "tooltip_from_uri",
+                                                onUpdateFields(
                                                     {
-                                                        uri: "",
-                                                        format: "json",
-                                                        schema: "whole_structure",
+                                                        tooltip_from_source:
+                                                            undefined,
+                                                        tooltip_from_uri: {
+                                                            uri: "",
+                                                            format: "json",
+                                                            schema: "whole_structure",
+                                                        },
                                                     },
-                                                    true,
+                                                    false,
                                                 );
                                             } else if (value === "source") {
-                                                onUpdateParam(
-                                                    "tooltip_from_uri",
-                                                    undefined,
-                                                    true,
-                                                );
-                                                onUpdateParam(
-                                                    "tooltip_from_source",
+                                                onUpdateFields(
                                                     {
-                                                        category_name: "",
-                                                        field_name: "",
-                                                        schema: "whole_structure",
+                                                        tooltip_from_uri:
+                                                            undefined,
+                                                        tooltip_from_source: {
+                                                            category_name: "",
+                                                            field_name: "",
+                                                            schema: "whole_structure",
+                                                        },
                                                     },
-                                                    true,
+                                                    false,
                                                 );
                                             }
                                         }}
@@ -982,45 +988,40 @@ export function StructureTab({
                                         value={getLabelMode(viewModel)}
                                         onChange={(value) => {
                                             if (value === "none") {
-                                                onUpdateParam(
-                                                    "label_from_uri",
-                                                    undefined,
-                                                    true,
-                                                );
-                                                onUpdateParam(
-                                                    "label_from_source",
-                                                    undefined,
-                                                    true,
+                                                onUpdateFields(
+                                                    {
+                                                        label_from_uri:
+                                                            undefined,
+                                                        label_from_source:
+                                                            undefined,
+                                                    },
+                                                    false,
                                                 );
                                             } else if (value === "uri") {
-                                                onUpdateParam(
-                                                    "label_from_source",
-                                                    undefined,
-                                                    true,
-                                                );
-                                                onUpdateParam(
-                                                    "label_from_uri",
+                                                onUpdateFields(
                                                     {
-                                                        uri: "",
-                                                        format: "json",
-                                                        schema: "whole_structure",
+                                                        label_from_source:
+                                                            undefined,
+                                                        label_from_uri: {
+                                                            uri: "",
+                                                            format: "json",
+                                                            schema: "whole_structure",
+                                                        },
                                                     },
-                                                    true,
+                                                    false,
                                                 );
                                             } else if (value === "source") {
-                                                onUpdateParam(
-                                                    "label_from_uri",
-                                                    undefined,
-                                                    true,
-                                                );
-                                                onUpdateParam(
-                                                    "label_from_source",
+                                                onUpdateFields(
                                                     {
-                                                        category_name: "",
-                                                        field_name: "",
-                                                        schema: "whole_structure",
+                                                        label_from_uri:
+                                                            undefined,
+                                                        label_from_source: {
+                                                            category_name: "",
+                                                            field_name: "",
+                                                            schema: "whole_structure",
+                                                        },
                                                     },
-                                                    true,
+                                                    false,
                                                 );
                                             }
                                         }}
@@ -1826,74 +1827,42 @@ export function StructureTab({
                                     }
 
                                     if (value === "Color") {
-                                        onUpdateStructureComponentParam(
+                                        onUpdateStructureComponentFields(
                                             currentComponent.id,
-                                            "color",
-                                            "#ffffff",
-                                            true,
-                                        );
-                                        onUpdateStructureComponentParam(
-                                            currentComponent.id,
-                                            "color_from_uri",
-                                            undefined,
-                                            true,
-                                        );
-                                        onUpdateStructureComponentParam(
-                                            currentComponent.id,
-                                            "color_from_source",
-                                            undefined,
-                                            true,
+                                            {
+                                                color:
+                                                    currentComponent.color ||
+                                                    "#ffffff",
+                                                color_from_uri: undefined,
+                                                color_from_source: undefined,
+                                            },
+                                            false,
                                         );
                                     } else if (value === "Color from URI") {
-                                        onUpdateStructureComponentParam(
+                                        onUpdateStructureComponentFields(
                                             currentComponent.id,
-                                            "color",
-                                            undefined,
-                                            true,
-                                        );
-
-                                        // Matches DataFromUriParams perfectly
-                                        onUpdateStructureComponentParam(
-                                            currentComponent.id,
-                                            "color_from_uri",
                                             {
-                                                uri: "",
-                                                format: "json",
-                                                schema: "whole_structure",
+                                                color_from_uri: {
+                                                    uri: "",
+                                                    format: "json",
+                                                    schema: "whole_structure",
+                                                },
+                                                color_from_source: undefined,
                                             },
-                                            true,
-                                        );
-
-                                        onUpdateStructureComponentParam(
-                                            currentComponent.id,
-                                            "color_from_source",
-                                            undefined,
-                                            true,
+                                            false, // color left untouched
                                         );
                                     } else if (value === "Color from source") {
-                                        onUpdateStructureComponentParam(
+                                        onUpdateStructureComponentFields(
                                             currentComponent.id,
-                                            "color",
-                                            undefined,
-                                            true,
-                                        );
-                                        onUpdateStructureComponentParam(
-                                            currentComponent.id,
-                                            "color_from_uri",
-                                            undefined,
-                                            true,
-                                        );
-
-                                        // Matches DataFromSourceParams perfectly
-                                        onUpdateStructureComponentParam(
-                                            currentComponent.id,
-                                            "color_from_source",
                                             {
-                                                category_name: "",
-                                                field_name: "",
-                                                schema: "whole_structure",
+                                                color_from_source: {
+                                                    category_name: "",
+                                                    field_name: "",
+                                                    schema: "whole_structure",
+                                                },
+                                                color_from_uri: undefined,
                                             },
-                                            true,
+                                            false, // color left untouched
                                         );
                                     }
                                 }}

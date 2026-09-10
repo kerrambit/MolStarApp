@@ -44,6 +44,8 @@ export function ViewBuilder(props: ViewBuilderProps) {
         updateVolumeViewModelForAsset,
         updateStructureViewModelForAsset,
         updateStructureComponentViewModel,
+        updateStructureViewModelFieldsForAsset,
+        updateStructureComponentViewModelFields,
         handleAssetToggle,
     } = useViewBuilder(props.viewKey);
 
@@ -262,6 +264,25 @@ export function ViewBuilder(props: ViewBuilderProps) {
                                         component,
                                         key,
                                         val,
+                                        sync,
+                                    )
+                                }
+                                onUpdateStructureFields={(fields, sync) =>
+                                    updateStructureViewModelFieldsForAsset(
+                                        asset.id,
+                                        fields,
+                                        sync,
+                                    )
+                                }
+                                onUpdateStructureComponentFields={(
+                                    component,
+                                    fields,
+                                    sync,
+                                ) =>
+                                    updateStructureComponentViewModelFields(
+                                        asset.id,
+                                        component,
+                                        fields,
                                         sync,
                                     )
                                 }
