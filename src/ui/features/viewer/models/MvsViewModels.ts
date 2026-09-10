@@ -103,6 +103,33 @@ export interface DataFromSourceParams {
 }
 
 /**
+ * A color node's `selector` narrows which part of the representation this
+ * override applies to. A ColorOverride is one such narrower `color` node
+ * layered on top of ComponentEntry.color (the base/global color with no
+ * selector). Multiple overrides = multiple `.color()` calls on the same
+ * representation, each with its own selector — confirmed against the real
+ * MVS builder: Representation.color() returns Representation, so repeated
+ * calls stack rather than replace.
+ */
+export interface ColorOverride {
+    id: string; // UI-only, never written to the tree — MVS has no node identity
+    selector: Selector;
+    color: string;
+}
+
+export function generateColorOverrideId(): string {
+    return typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : `color-override-${Math.random().toString(36).slice(2)}`;
+}
+
+export function createDefaultColorOverride(
+    id: string = generateColorOverrideId(),
+): ColorOverride {
+    return { id, selector: "all", color: "#ffffff" };
+}
+
+/**
  * A single component: its selection, how it's rendered, its color/opacity,
  * its own optional inline label/tooltip, camera focus, and transform.
  *
@@ -138,6 +165,7 @@ export interface ComponentEntry {
 
     // --- Color (mutually exclusive in MVS — UI must ensure only one is set) ---
     color: string;
+    colorOverrides: ColorOverride[];
     color_from_uri?: DataFromUriParams;
     color_from_source?: DataFromSourceParams;
 
@@ -207,6 +235,7 @@ export function createDefaultComponentEntry(
         surface_type: "molecular",
         size_theme: "uniform",
         color: "#ffffff",
+        colorOverrides: [],
         opacity: 1.0,
         show_focus: false,
         focus_direction: [0, 0, -1],

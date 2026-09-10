@@ -10,10 +10,11 @@ import { type MVSTree } from "molstar/lib/extensions/mvs/tree/mvs/mvs-tree";
 import { type Base64Png, type CameraState, type HexColor } from "./types";
 import { ColorT } from "molstar/lib/extensions/mvs/tree/mvs/param-types";
 import { getEulerAnglesFromMatrix3x3, getRotationMatrix3x3 } from "./math";
-import type {
-    ComponentEntry,
-    StructureViewModel,
-    VolumeViewModel,
+import {
+    generateColorOverrideId,
+    type ComponentEntry,
+    type StructureViewModel,
+    type VolumeViewModel,
 } from "../../features/viewer/models/MvsViewModels";
 import { createMVSBuilder } from "molstar/lib/extensions/mvs/tree/mvs/mvs-builder";
 
@@ -371,13 +372,14 @@ export function getStructureNode(
 ): any {
     const builder = createMVSBuilder();
     const downloaded = builder.download({ url: assetId });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const parsed = downloaded.parse({ format: viewModel.format as any });
 
     const baseStructureParams = {
-        block_header: viewModel.block_header,
+        block_header: viewModel.block_header ?? undefined,
         block_index: viewModel.block_index,
         model_index: viewModel.model_index,
-        coordinates_ref: viewModel.coordinates_ref,
+        coordinates_ref: viewModel.coordinates_ref ?? undefined,
     };
 
     const structureNode = (() => {
@@ -434,9 +436,10 @@ export function getStructureNode(
     if (viewModel.tooltip_from_uri)
         structureNode.tooltipFromUri(viewModel.tooltip_from_uri);
     if (viewModel.tooltip_from_source)
-        structureNode.tooltipFromSource(viewModel.tooltip_from_source);
+        structureNode.tooltipFromSource(viewModel.tooltip_from_source as never);
 
     viewModel.components.forEach((comp: ComponentEntry) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const componentNode = structureNode.component({
             selector: comp.selector as any,
         });
@@ -490,16 +493,29 @@ export function getStructureNode(
         if (comp.representationType === "putty")
             repParams.size_theme = comp.size_theme;
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const representationNode = componentNode.representation(
             repParams as any,
         );
 
+        // Color variants are mutually exclusive in MVS — the UI's selector-type
+        // toggle pattern should ensure only one of these three is ever set.
         if (comp.color_from_source) {
             representationNode.colorFromSource(comp.color_from_source);
         } else if (comp.color_from_uri) {
             representationNode.colorFromUri(comp.color_from_uri);
         } else {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             representationNode.color({ color: comp.color as any });
+
+            for (const override of comp.colorOverrides || []) {
+                representationNode.color({
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    color: override.color as any,
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    selector: override.selector as any,
+                });
+            }
         }
         representationNode.opacity({ opacity: comp.opacity });
 
@@ -668,12 +684,20 @@ function readComponentEntry(
             if (child.params.size_theme !== undefined)
                 entry.size_theme = child.params.size_theme;
 
+            entry.colorOverrides = [];
             for (const grandchild of child.children || []) {
-                if (
-                    grandchild.kind === "color" &&
-                    grandchild.params?.color !== undefined
-                ) {
-                    entry.color = grandchild.params.color;
+                if (grandchild.kind === "color") {
+                    if (grandchild.params?.selector === undefined) {
+                        if (grandchild.params?.color !== undefined) {
+                            entry.color = grandchild.params.color;
+                        }
+                    } else if (grandchild.params?.color !== undefined) {
+                        entry.colorOverrides.push({
+                            id: generateColorOverrideId(),
+                            selector: grandchild.params.selector,
+                            color: grandchild.params.color,
+                        });
+                    }
                 }
                 if (grandchild.kind === "color_from_uri")
                     entry.color_from_uri = grandchild.params;
@@ -735,6 +759,7 @@ function readComponentEntry(
  * @returns the retrieved StructureViewModel or the default one if not found
  */
 export function getStructureViewModel(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     rootNode: any,
     assetId: string,
     defaultViewModel: StructureViewModel,
@@ -797,6 +822,7 @@ export function getStructureViewModel(
     }
 
     const componentNodes = (structureNode.children || []).filter(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (c: any) =>
             c.kind === "component" ||
             c.kind === "component_from_uri" ||
@@ -805,12 +831,14 @@ export function getStructureViewModel(
     if (componentNodes.length > 0) {
         const defaultComponent = defaultViewModel.components[0];
         let componentIdCounter = 0;
-        params.components = componentNodes.map((c: any) =>
-            readComponentEntry(
-                c,
-                `component-${componentIdCounter++}`,
-                defaultComponent,
-            ),
+        params.components = componentNodes.map(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (c: any) =>
+                readComponentEntry(
+                    c,
+                    `component-${componentIdCounter++}`,
+                    defaultComponent,
+                ),
         );
     }
 

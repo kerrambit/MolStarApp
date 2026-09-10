@@ -21,6 +21,7 @@ import {
 } from "@mantine/core";
 import { getAllParserTypes } from "../../../../../config/assetsDefinitions";
 import {
+    createDefaultColorOverride,
     getActiveColorProperty,
     getLabelMode,
     getTooltipMode,
@@ -290,10 +291,151 @@ export function StructureTab({
         );
     };
 
-    // Draft state for the "add new field" row, keyed per expression index - each expression can be mid-way through adding a field independently.
+    // Handlers for color overrides.
+    const handleAddColorOverride = () => {
+        if (!currentComponent) return;
+        onUpdateStructureComponentParam(
+            currentComponent.id,
+            "colorOverrides",
+            [
+                ...(currentComponent.colorOverrides || []),
+                createDefaultColorOverride(),
+            ],
+            true,
+        );
+    };
+
+    const handleRemoveColorOverride = (overrideId: string) => {
+        if (!currentComponent) return;
+        onUpdateStructureComponentParam(
+            currentComponent.id,
+            "colorOverrides",
+            (currentComponent.colorOverrides || []).filter(
+                (o) => o.id !== overrideId,
+            ),
+            true,
+        );
+    };
+
+    const handleColorOverrideColorChange = (
+        overrideId: string,
+        color: string,
+        sync: boolean,
+    ) => {
+        if (!currentComponent) return;
+        onUpdateStructureComponentParam(
+            currentComponent.id,
+            "colorOverrides",
+            (currentComponent.colorOverrides || []).map((o) =>
+                o.id === overrideId ? { ...o, color } : o,
+            ),
+            sync,
+        );
+    };
+
+    const handleColorOverrideSelectorModeChange = (
+        overrideId: string,
+        mode: "PredefinedSelector" | "ExpressionSelector",
+    ) => {
+        if (!currentComponent) return;
+        const nextSelector: Selector =
+            mode === "PredefinedSelector" ? "all" : {};
+        onUpdateStructureComponentParam(
+            currentComponent.id,
+            "colorOverrides",
+            (currentComponent.colorOverrides || []).map((o) =>
+                o.id === overrideId ? { ...o, selector: nextSelector } : o,
+            ),
+            true,
+        );
+    };
+
+    const handleColorOverridePredefinedChange = (
+        overrideId: string,
+        val: PredefinedSelector,
+    ) => {
+        if (!currentComponent) return;
+        onUpdateStructureComponentParam(
+            currentComponent.id,
+            "colorOverrides",
+            (currentComponent.colorOverrides || []).map((o) =>
+                o.id === overrideId ? { ...o, selector: val } : o,
+            ),
+            true,
+        );
+    };
+
+    const handleColorOverrideExpressionFieldChange = (
+        overrideId: string,
+        field: keyof SelectorExpression,
+        val: string | number | undefined,
+        sync: boolean,
+    ) => {
+        if (!currentComponent) return;
+        onUpdateStructureComponentParam(
+            currentComponent.id,
+            "colorOverrides",
+            (currentComponent.colorOverrides || []).map((o) => {
+                if (o.id !== overrideId) return o;
+                const expr = isSingleSelectorExpression(o.selector)
+                    ? { ...o.selector }
+                    : ({} as Record<string, any>);
+
+                if (val === undefined || val === "") {
+                    delete expr[field];
+                } else {
+                    expr[field] = val;
+                }
+
+                return { ...o, selector: expr };
+            }),
+            sync,
+        );
+    };
+
+    const handleColorOverrideChangeFieldKey = (
+        overrideId: string,
+        oldField: keyof SelectorExpression,
+        newField: keyof SelectorExpression,
+    ) => {
+        if (!currentComponent) return;
+        onUpdateStructureComponentParam(
+            currentComponent.id,
+            "colorOverrides",
+            (currentComponent.colorOverrides || []).map((o) => {
+                if (o.id !== overrideId) return o;
+                const expr = isSingleSelectorExpression(o.selector)
+                    ? { ...o.selector }
+                    : ({} as Record<string, any>);
+                const rawValue = expr[oldField];
+                const fieldDef = SELECTOR_EXPRESSION_FIELDS.find(
+                    (f) => f.key === newField,
+                );
+
+                delete expr[oldField];
+
+                expr[newField] =
+                    fieldDef?.type === "number"
+                        ? typeof rawValue === "number"
+                            ? rawValue
+                            : Number(rawValue) || undefined
+                        : String(rawValue ?? "");
+
+                return { ...o, selector: expr };
+            }),
+            true,
+        );
+    };
+
     const [newFieldDrafts, setNewFieldDrafts] = useState<
         Record<
             number,
+            { field: keyof SelectorExpression | null; value: string }
+        >
+    >({});
+    const [overrideFieldDrafts, setOverrideFieldDrafts] = useState<
+        Record<
+            string,
             { field: keyof SelectorExpression | null; value: string }
         >
     >({});
@@ -308,7 +450,6 @@ export function StructureTab({
         setNewFieldDrafts((prev) => ({ ...prev, [exprIndex]: draft }));
     };
 
-    // Changes which field key a row targets — moves the value across, converting  type if the new field is numeric vs. text.
     const handleChangeExpressionFieldKey = (
         exprIndex: number,
         oldField: keyof SelectorExpression,
@@ -343,7 +484,6 @@ export function StructureTab({
         );
     };
 
-    // Removes one field key from a given expression (not the whole expression).
     const handleRemoveExpressionField = (
         exprIndex: number,
         field: keyof SelectorExpression,
@@ -362,7 +502,6 @@ export function StructureTab({
         );
     };
 
-    // Commits the draft row (field + value) into the expression, then clears the draft.
     const handleSaveNewExpressionField = (exprIndex: number) => {
         if (!currentComponent) return;
         const draft = getDraft(exprIndex);
@@ -388,7 +527,40 @@ export function StructureTab({
         setDraft(exprIndex, { field: null, value: "" });
     };
 
-    // Render the component.
+    const handleSaveNewOverrideExpressionField = (overrideId: string) => {
+        if (!currentComponent) return;
+        const draft = overrideFieldDrafts[overrideId] ?? {
+            field: null,
+            value: "",
+        };
+        if (!draft.field || draft.value === "") return;
+
+        const fieldDef = SELECTOR_EXPRESSION_FIELDS.find(
+            (f) => f.key === draft.field,
+        );
+        const value =
+            fieldDef?.type === "number" ? Number(draft.value) : draft.value;
+        if (fieldDef?.type === "number" && Number.isNaN(value)) return;
+
+        onUpdateStructureComponentParam(
+            currentComponent.id,
+            "colorOverrides",
+            (currentComponent.colorOverrides || []).map((o) => {
+                if (o.id !== overrideId) return o;
+                const expr = isSingleSelectorExpression(o.selector)
+                    ? { ...o.selector }
+                    : {};
+                return { ...o, selector: { ...expr, [draft.field!]: value } };
+            }),
+            true,
+        );
+
+        setOverrideFieldDrafts((prev) => ({
+            ...prev,
+            [overrideId]: { field: null, value: "" },
+        }));
+    };
+
     return (
         <div>
             {/* General settings for Structure tab. */}
@@ -407,7 +579,7 @@ export function StructureTab({
                         return nextState;
                     });
                 }}
-            ></CollapseTrigger>
+            />
 
             <Collapse expanded={generalSectionExpanded}>
                 <AssetBuilderCardSectionGroup>
@@ -429,14 +601,11 @@ export function StructureTab({
                         ]}
                         value={viewModel.type}
                         onChange={(val) => {
-                            if (val) {
-                                onUpdateParam("type", val, true);
-                            }
+                            if (val) onUpdateParam("type", val, true);
                         }}
                         size="xs"
                     />
 
-                    {/* Advanced general settings for Structure tab. */}
                     <CollapseTrigger
                         title={"Advanced options"}
                         size={"sm"}
@@ -452,7 +621,7 @@ export function StructureTab({
                                 return nextState;
                             });
                         }}
-                    ></CollapseTrigger>
+                    />
 
                     <Collapse expanded={advancedGeneralSectionExpanded}>
                         <AssetBuilderCardSectionGroup
@@ -483,7 +652,7 @@ export function StructureTab({
                                         true,
                                     )
                                 }
-                            ></TextInput>
+                            />
                             <NumberInput
                                 label="Block index"
                                 value={viewModel.block_index}
@@ -556,7 +725,7 @@ export function StructureTab({
                                         true,
                                     )
                                 }
-                            ></TextInput>
+                            />
                             {viewModel.type === "assembly" && (
                                 <TextInput
                                     label="Assembly Id"
@@ -582,7 +751,7 @@ export function StructureTab({
                                             true,
                                         )
                                     }
-                                ></TextInput>
+                                />
                             )}
                             {viewModel.type === "symmetry_mates" && (
                                 <NumberInput
@@ -608,18 +777,16 @@ export function StructureTab({
                                             true,
                                         )
                                     }
-                                ></NumberInput>
+                                />
                             )}
                             {viewModel.type === "symmetry" && (
                                 <IJKControls
                                     viewModel={viewModel}
                                     onUpdateParam={onUpdateParam}
-                                ></IJKControls>
+                                />
                             )}
 
-                            <Divider mt="md" mb="md"></Divider>
-
-                            {/* Tooltips & Labels settings for structure tab. */}
+                            {/* Global Tooltips & Labels */}
                             <CollapseTrigger
                                 title={"Global Tooltips & Labels"}
                                 size={"md"}
@@ -637,7 +804,7 @@ export function StructureTab({
                                         },
                                     );
                                 }}
-                            ></CollapseTrigger>
+                            />
 
                             <Collapse
                                 expanded={tooltipsAndLabelsSectionExpanded}
@@ -710,7 +877,6 @@ export function StructureTab({
                                         ]}
                                     />
 
-                                    {/* Tooltip from URI */}
                                     {getTooltipMode(viewModel) === "uri" &&
                                         viewModel.tooltip_from_uri && (
                                             <>
@@ -766,7 +932,6 @@ export function StructureTab({
                                                             "tooltip_from_uri",
                                                             {
                                                                 ...viewModel.tooltip_from_uri!,
-                                                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                                 format: val as any,
                                                             },
                                                             true,
@@ -788,7 +953,6 @@ export function StructureTab({
                                                             "tooltip_from_uri",
                                                             {
                                                                 ...viewModel.tooltip_from_uri!,
-                                                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                                 schema: val as any,
                                                             },
                                                             true,
@@ -870,7 +1034,6 @@ export function StructureTab({
                                             </>
                                         )}
 
-                                    {/* Tooltip from Source */}
                                     {getTooltipMode(viewModel) === "source" &&
                                         viewModel.tooltip_from_source && (
                                             <>
@@ -889,7 +1052,6 @@ export function StructureTab({
                                                             "tooltip_from_source",
                                                             {
                                                                 ...viewModel.tooltip_from_source!,
-                                                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                                 schema: val as any,
                                                             },
                                                             true,
@@ -1035,7 +1197,6 @@ export function StructureTab({
                                         ]}
                                     />
 
-                                    {/* Label from URI */}
                                     {getLabelMode(viewModel) === "uri" &&
                                         viewModel.label_from_uri && (
                                             <>
@@ -1089,7 +1250,6 @@ export function StructureTab({
                                                             "label_from_uri",
                                                             {
                                                                 ...viewModel.label_from_uri!,
-                                                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                                 format: val as any,
                                                             },
                                                             true,
@@ -1110,7 +1270,6 @@ export function StructureTab({
                                                             "label_from_uri",
                                                             {
                                                                 ...viewModel.label_from_uri!,
-                                                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                                 schema: val as any,
                                                             },
                                                             true,
@@ -1190,7 +1349,6 @@ export function StructureTab({
                                             </>
                                         )}
 
-                                    {/* Label from Source */}
                                     {getLabelMode(viewModel) === "source" &&
                                         viewModel.label_from_source && (
                                             <>
@@ -1209,7 +1367,6 @@ export function StructureTab({
                                                             "label_from_source",
                                                             {
                                                                 ...viewModel.label_from_source!,
-                                                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                                 schema: val as any,
                                                             },
                                                             true,
@@ -1291,7 +1448,7 @@ export function StructureTab({
                                 </AssetBuilderCardSectionGroup>
                             </Collapse>
 
-                            {/* Transform settings for structure tab. */}
+                            {/* Global transform settings */}
                             <CollapseTrigger
                                 title={"Global transform"}
                                 size={"md"}
@@ -1307,20 +1464,20 @@ export function StructureTab({
                                         return nextState;
                                     });
                                 }}
-                            ></CollapseTrigger>
+                            />
 
                             <Collapse expanded={transformSectionExpanded}>
                                 <StructureTransformControls
                                     viewModel={viewModel}
                                     onUpdateParam={onUpdateParam}
-                                ></StructureTransformControls>
+                                />
                             </Collapse>
                         </AssetBuilderCardSectionGroup>
                     </Collapse>
                 </AssetBuilderCardSectionGroup>
             </Collapse>
 
-            {/* Components settings for Structure tab. */}
+            {/* Components */}
             <CollapseTrigger
                 title={"Components"}
                 size={"md"}
@@ -1337,19 +1494,15 @@ export function StructureTab({
                         return nextState;
                     });
                 }}
-            ></CollapseTrigger>
+            />
 
             <Collapse expanded={componentsSectionExpanded}>
                 <AssetBuilderCardSectionGroup divider={false}>
-                    {/* Tabs for component selection. */}
                     <Tabs
                         onChange={(value) => {
-                            if (!value) {
-                                return;
-                            }
-
+                            if (!value) return;
                             if (value === "+") {
-                                console.log("New component shall be added."); // TODO: add new component
+                                console.log("New component shall be added.");
                                 return;
                             }
                             setCurrentComponentId(value);
@@ -1366,45 +1519,42 @@ export function StructureTab({
                                 >
                                     <b>+</b>
                                 </Tabs.Tab>
-                                {viewModel.components.map((component) => {
-                                    return (
-                                        <Tabs.Tab
-                                            key={component.id}
-                                            value={component.id}
-                                            title={`${selectorToString(
-                                                component.selector,
-                                                false,
-                                            )}`}
+                                {viewModel.components.map((component) => (
+                                    <Tabs.Tab
+                                        key={component.id}
+                                        value={component.id}
+                                        title={`${selectorToString(
+                                            component.selector,
+                                            false,
+                                        )}`}
+                                    >
+                                        <span
+                                            style={{
+                                                display: "flex",
+                                                gap: "0.5em",
+                                                alignItems: "center",
+                                            }}
                                         >
-                                            <span
-                                                style={{
-                                                    display: "flex",
-                                                    gap: "0.5em",
-                                                    alignItems: "center",
+                                            {selectorToString(
+                                                component.selector,
+                                            )}
+                                            <DeleteActionIcon
+                                                tooltip="Delete component."
+                                                onClick={(e) => {
+                                                    e.preventDefault();
+                                                    e.stopPropagation();
+                                                    console.log(
+                                                        "Delete component.",
+                                                    );
                                                 }}
-                                            >
-                                                {selectorToString(
-                                                    component.selector,
-                                                )}
-                                                <DeleteActionIcon
-                                                    tooltip="Delete component."
-                                                    onClick={(e) => {
-                                                        e.preventDefault();
-                                                        e.stopPropagation();
-                                                        console.log(
-                                                            "Delete component.", // TODO: delete old component
-                                                        );
-                                                    }}
-                                                ></DeleteActionIcon>
-                                            </span>
-                                        </Tabs.Tab>
-                                    );
-                                })}
+                                            />
+                                        </span>
+                                    </Tabs.Tab>
+                                ))}
                             </Scroller>
                         </Tabs.List>
                     </Tabs>
 
-                    {/* Selector for given component. */}
                     <SegmentedController<ComponentEntryComponentSelectorType>
                         orientation="vertical"
                         size={"xs"}
@@ -1414,13 +1564,9 @@ export function StructureTab({
                                 : "ExpressionSelector"
                         }
                         onChange={(value) => {
-                            if (!currentComponent) {
-                                return;
-                            }
-
+                            if (!currentComponent) return;
                             const nextSelector: Selector =
                                 value === "PredefinedSelector" ? "all" : {};
-
                             onUpdateStructureComponentParam(
                                 currentComponent.id,
                                 "selector",
@@ -1440,7 +1586,6 @@ export function StructureTab({
                         ]}
                     />
 
-                    {/* Predefined selector settings. */}
                     {currentComponent?.selector !== undefined &&
                         isPredefinedSelector(currentComponent.selector) && (
                             <Select
@@ -1458,20 +1603,18 @@ export function StructureTab({
                                 ]}
                                 value={currentComponent.selector}
                                 onChange={(val) => {
-                                    if (val) {
+                                    if (val)
                                         onUpdateStructureComponentParam(
                                             currentComponent.id,
                                             "selector",
                                             val as PredefinedSelector,
                                             true,
                                         );
-                                    }
                                 }}
                                 size="xs"
                             />
                         )}
 
-                    {/* Expression selector settings. */}
                     {currentComponent?.selector !== undefined &&
                         (isSelectorExpressionList(currentComponent.selector) ||
                             isSingleSelectorExpression(
@@ -1517,7 +1660,9 @@ export function StructureTab({
                                                     SELECTOR_EXPRESSION_FIELDS.find(
                                                         (f) =>
                                                             f.key === fieldKey,
-                                                    )!;
+                                                    );
+                                                if (!fieldDef) return null; // SAFETY GUARD 1
+
                                                 const fieldOptions =
                                                     SELECTOR_EXPRESSION_FIELDS.filter(
                                                         (f) =>
@@ -1551,11 +1696,8 @@ export function StructureTab({
                                                                 )
                                                             }
                                                             size="xs"
-                                                            style={{
-                                                                flex: 1,
-                                                            }}
+                                                            style={{ flex: 1 }}
                                                         />
-
                                                         {fieldDef.type ===
                                                         "text" ? (
                                                             <TextInput
@@ -1666,7 +1808,6 @@ export function StructureTab({
                                                                 }
                                                             />
                                                         )}
-
                                                         <DeleteActionIcon
                                                             onClick={() =>
                                                                 handleRemoveExpressionField(
@@ -1680,7 +1821,6 @@ export function StructureTab({
                                                 );
                                             })}
 
-                                            {/* Draft row for adding a new field to this expression. */}
                                             <Group
                                                 align="flex-end"
                                                 gap="0.33em"
@@ -1742,14 +1882,12 @@ export function StructureTab({
                                                     enabled={false}
                                                 />
                                             </Group>
-
                                             {index <
                                                 currentExpressions.length -
                                                     1 && <Divider />}
                                         </AssetBuilderCardSectionGroup>
                                     );
                                 })}
-
                                 <div
                                     style={{
                                         display: "flex",
@@ -1766,7 +1904,7 @@ export function StructureTab({
                             </AssetBuilderCardSectionGroup>
                         )}
 
-                    {/* Representation settings for structure component tab. */}
+                    {/* Representation */}
                     <CollapseTrigger
                         title={"Representation"}
                         size={"md"}
@@ -1785,7 +1923,7 @@ export function StructureTab({
                                 },
                             );
                         }}
-                    ></CollapseTrigger>
+                    />
 
                     <Collapse expanded={componentRepresentationSectionExpanded}>
                         <AssetBuilderCardSectionGroup>
@@ -1806,14 +1944,13 @@ export function StructureTab({
                                     "cartoon"
                                 }
                                 onChange={(val) => {
-                                    if (val && currentComponentId) {
+                                    if (val && currentComponentId)
                                         onUpdateStructureComponentParam(
                                             currentComponentId,
                                             "representationType",
                                             val,
                                             true,
                                         );
-                                    }
                                 }}
                                 size="xs"
                             />
@@ -1822,9 +1959,7 @@ export function StructureTab({
                                 size={"xs"}
                                 value={getActiveColorProperty(currentComponent)}
                                 onChange={(value) => {
-                                    if (!currentComponent) {
-                                        return;
-                                    }
+                                    if (!currentComponent) return;
 
                                     if (value === "Color") {
                                         onUpdateStructureComponentFields(
@@ -1836,12 +1971,14 @@ export function StructureTab({
                                                 color_from_uri: undefined,
                                                 color_from_source: undefined,
                                             },
-                                            false,
+                                            true, // Safe to sync immediately since it's just a hex color
                                         );
                                     } else if (value === "Color from URI") {
                                         onUpdateStructureComponentFields(
                                             currentComponent.id,
                                             {
+                                                color: undefined as any,
+                                                colorOverrides: [], // <-- CLEAR OVERRIDES
                                                 color_from_uri: {
                                                     uri: "",
                                                     format: "json",
@@ -1849,12 +1986,14 @@ export function StructureTab({
                                                 },
                                                 color_from_source: undefined,
                                             },
-                                            false, // color left untouched
+                                            false, // Do NOT sync empty URI
                                         );
                                     } else if (value === "Color from source") {
                                         onUpdateStructureComponentFields(
                                             currentComponent.id,
                                             {
+                                                color: undefined as any,
+                                                colorOverrides: [], // <-- CLEAR OVERRIDES
                                                 color_from_source: {
                                                     category_name: "",
                                                     field_name: "",
@@ -1862,15 +2001,12 @@ export function StructureTab({
                                                 },
                                                 color_from_uri: undefined,
                                             },
-                                            false, // color left untouched
+                                            false, // Do NOT sync empty source
                                         );
                                     }
                                 }}
                                 data={[
-                                    {
-                                        label: "Color",
-                                        value: "Color",
-                                    },
+                                    { label: "Color", value: "Color" },
                                     {
                                         label: "Color from URI (advanced)",
                                         value: "Color from URI",
@@ -1881,11 +2017,18 @@ export function StructureTab({
                                     },
                                 ]}
                             />
+
                             {getActiveColorProperty(currentComponent) ===
                                 "Color" && (
                                 <>
+                                    {/* BASE COLOR */}
                                     <ColorInput
-                                        label="Color"
+                                        label={
+                                            (currentComponent?.colorOverrides
+                                                ?.length ?? 0) > 0
+                                                ? "Base Color"
+                                                : "Color"
+                                        }
                                         value={
                                             currentComponent?.color || "#ffffff"
                                         }
@@ -1912,6 +2055,447 @@ export function StructureTab({
                                             }
                                         }}
                                     />
+
+                                    {(
+                                        currentComponent?.colorOverrides || []
+                                    ).map((override, index) => {
+                                        const expr = isSingleSelectorExpression(
+                                            override.selector,
+                                        )
+                                            ? override.selector
+                                            : {};
+                                        const usedFields = Object.keys(
+                                            expr,
+                                        ) as (keyof SelectorExpression)[];
+
+                                        return (
+                                            <AssetBuilderCardSectionGroup
+                                                key={override.id}
+                                                gap="0.33em"
+                                                divider={true}
+                                                bottomMargin="sm"
+                                            >
+                                                <ActionableList>
+                                                    <ActionableListItem
+                                                        title={`${
+                                                            index + 1
+                                                        }. color override `}
+                                                        titleSize="sm"
+                                                        rightComponent={
+                                                            <DeleteActionIcon
+                                                                onClick={() =>
+                                                                    handleRemoveColorOverride(
+                                                                        override.id,
+                                                                    )
+                                                                }
+                                                                tooltip="Remove color override."
+                                                            />
+                                                        }
+                                                    />
+                                                </ActionableList>
+                                                <Group
+                                                    justify="space-between"
+                                                    align="center"
+                                                >
+                                                    <SegmentedController<
+                                                        | "PredefinedSelector"
+                                                        | "ExpressionSelector"
+                                                    >
+                                                        size="xs"
+                                                        value={
+                                                            typeof override.selector ===
+                                                            "string"
+                                                                ? "PredefinedSelector"
+                                                                : "ExpressionSelector"
+                                                        }
+                                                        onChange={(mode) =>
+                                                            handleColorOverrideSelectorModeChange(
+                                                                override.id,
+                                                                mode,
+                                                            )
+                                                        }
+                                                        data={[
+                                                            {
+                                                                label: "Predefined",
+                                                                value: "PredefinedSelector",
+                                                            },
+                                                            {
+                                                                label: "Expression",
+                                                                value: "ExpressionSelector",
+                                                            },
+                                                        ]}
+                                                    />
+                                                </Group>
+
+                                                {typeof override.selector ===
+                                                "string" ? (
+                                                    <Select
+                                                        label="Selector"
+                                                        size="xs"
+                                                        data={[
+                                                            "all",
+                                                            "polymer",
+                                                            "protein",
+                                                            "nucleic",
+                                                            "branched",
+                                                            "ligand",
+                                                            "ion",
+                                                            "water",
+                                                            "coarse",
+                                                        ]}
+                                                        value={
+                                                            override.selector
+                                                        }
+                                                        onChange={(val) =>
+                                                            val &&
+                                                            handleColorOverridePredefinedChange(
+                                                                override.id,
+                                                                val as PredefinedSelector,
+                                                            )
+                                                        }
+                                                    />
+                                                ) : (
+                                                    <>
+                                                        {usedFields.map(
+                                                            (fieldKey) => {
+                                                                const fieldDef =
+                                                                    SELECTOR_EXPRESSION_FIELDS.find(
+                                                                        (f) =>
+                                                                            f.key ===
+                                                                            fieldKey,
+                                                                    );
+                                                                if (!fieldDef)
+                                                                    return null;
+
+                                                                const fieldOptions =
+                                                                    SELECTOR_EXPRESSION_FIELDS.filter(
+                                                                        (f) =>
+                                                                            f.key ===
+                                                                                fieldKey ||
+                                                                            !usedFields.includes(
+                                                                                f.key,
+                                                                            ),
+                                                                    ).map(
+                                                                        (
+                                                                            f,
+                                                                        ) => ({
+                                                                            value: f.key,
+                                                                            label: f.label,
+                                                                        }),
+                                                                    );
+
+                                                                return (
+                                                                    <Group
+                                                                        key={
+                                                                            fieldKey
+                                                                        }
+                                                                        align="flex-end"
+                                                                        gap="0.33em"
+                                                                        wrap="nowrap"
+                                                                    >
+                                                                        <Select
+                                                                            label="Field"
+                                                                            data={
+                                                                                fieldOptions
+                                                                            }
+                                                                            value={
+                                                                                fieldKey
+                                                                            }
+                                                                            onChange={(
+                                                                                val,
+                                                                            ) =>
+                                                                                val &&
+                                                                                handleColorOverrideChangeFieldKey(
+                                                                                    override.id,
+                                                                                    fieldKey,
+                                                                                    val as keyof SelectorExpression,
+                                                                                )
+                                                                            }
+                                                                            size="xs"
+                                                                            style={{
+                                                                                flex: 1,
+                                                                            }}
+                                                                        />
+                                                                        {fieldDef.type ===
+                                                                        "text" ? (
+                                                                            <TextInput
+                                                                                label="Value"
+                                                                                value={
+                                                                                    (expr[
+                                                                                        fieldKey
+                                                                                    ] as string) ??
+                                                                                    ""
+                                                                                }
+                                                                                size="xs"
+                                                                                style={{
+                                                                                    flex: 1,
+                                                                                }}
+                                                                                onChange={(
+                                                                                    e,
+                                                                                ) =>
+                                                                                    handleColorOverrideExpressionFieldChange(
+                                                                                        override.id,
+                                                                                        fieldKey,
+                                                                                        e
+                                                                                            .currentTarget
+                                                                                            .value,
+                                                                                        false,
+                                                                                    )
+                                                                                }
+                                                                                onBlur={(
+                                                                                    e,
+                                                                                ) =>
+                                                                                    handleColorOverrideExpressionFieldChange(
+                                                                                        override.id,
+                                                                                        fieldKey,
+                                                                                        e
+                                                                                            .currentTarget
+                                                                                            .value,
+                                                                                        true,
+                                                                                    )
+                                                                                }
+                                                                                onKeyDown={(
+                                                                                    e,
+                                                                                ) =>
+                                                                                    e.key ===
+                                                                                        "Enter" &&
+                                                                                    handleColorOverrideExpressionFieldChange(
+                                                                                        override.id,
+                                                                                        fieldKey,
+                                                                                        e
+                                                                                            .currentTarget
+                                                                                            .value,
+                                                                                        true,
+                                                                                    )
+                                                                                }
+                                                                            />
+                                                                        ) : (
+                                                                            <NumberInput
+                                                                                label="Value"
+                                                                                value={
+                                                                                    expr[
+                                                                                        fieldKey
+                                                                                    ] as
+                                                                                        | number
+                                                                                        | undefined
+                                                                                }
+                                                                                size="xs"
+                                                                                style={{
+                                                                                    flex: 1,
+                                                                                }}
+                                                                                onChange={(
+                                                                                    val,
+                                                                                ) =>
+                                                                                    handleColorOverrideExpressionFieldChange(
+                                                                                        override.id,
+                                                                                        fieldKey,
+                                                                                        typeof val ===
+                                                                                            "number"
+                                                                                            ? val
+                                                                                            : undefined,
+                                                                                        false,
+                                                                                    )
+                                                                                }
+                                                                                onBlur={(
+                                                                                    e,
+                                                                                ) =>
+                                                                                    handleColorOverrideExpressionFieldChange(
+                                                                                        override.id,
+                                                                                        fieldKey,
+                                                                                        e
+                                                                                            .currentTarget
+                                                                                            .value as unknown as number,
+                                                                                        true,
+                                                                                    )
+                                                                                }
+                                                                                onKeyDown={(
+                                                                                    e,
+                                                                                ) =>
+                                                                                    e.key ===
+                                                                                        "Enter" &&
+                                                                                    handleColorOverrideExpressionFieldChange(
+                                                                                        override.id,
+                                                                                        fieldKey,
+                                                                                        e
+                                                                                            .currentTarget
+                                                                                            .value as unknown as number,
+                                                                                        true,
+                                                                                    )
+                                                                                }
+                                                                            />
+                                                                        )}
+                                                                        <DeleteActionIcon
+                                                                            onClick={() =>
+                                                                                handleColorOverrideExpressionFieldChange(
+                                                                                    override.id,
+                                                                                    fieldKey,
+                                                                                    undefined,
+                                                                                    true,
+                                                                                )
+                                                                            }
+                                                                            tooltip="Remove field."
+                                                                        />
+                                                                    </Group>
+                                                                );
+                                                            },
+                                                        )}
+
+                                                        <Group
+                                                            align="flex-end"
+                                                            gap="0.33em"
+                                                            wrap="nowrap"
+                                                        >
+                                                            <Select
+                                                                label="Add field"
+                                                                placeholder="Choose field"
+                                                                data={SELECTOR_EXPRESSION_FIELDS.filter(
+                                                                    (f) =>
+                                                                        !usedFields.includes(
+                                                                            f.key,
+                                                                        ),
+                                                                ).map((f) => ({
+                                                                    value: f.key,
+                                                                    label: f.label,
+                                                                }))}
+                                                                value={
+                                                                    overrideFieldDrafts[
+                                                                        override
+                                                                            .id
+                                                                    ]?.field ||
+                                                                    null
+                                                                }
+                                                                onChange={(
+                                                                    val,
+                                                                ) =>
+                                                                    setOverrideFieldDrafts(
+                                                                        (
+                                                                            prev,
+                                                                        ) => ({
+                                                                            ...prev,
+                                                                            [override.id]:
+                                                                                {
+                                                                                    ...(prev[
+                                                                                        override
+                                                                                            .id
+                                                                                    ] || {
+                                                                                        value: "",
+                                                                                    }),
+                                                                                    field:
+                                                                                        (val as keyof SelectorExpression) ??
+                                                                                        null,
+                                                                                },
+                                                                        }),
+                                                                    )
+                                                                }
+                                                                size="xs"
+                                                                style={{
+                                                                    flex: 1,
+                                                                }}
+                                                                clearable
+                                                            />
+                                                            <TextInput
+                                                                label="Value"
+                                                                value={
+                                                                    overrideFieldDrafts[
+                                                                        override
+                                                                            .id
+                                                                    ]?.value ||
+                                                                    ""
+                                                                }
+                                                                size="xs"
+                                                                style={{
+                                                                    flex: 1,
+                                                                }}
+                                                                disabled={
+                                                                    !overrideFieldDrafts[
+                                                                        override
+                                                                            .id
+                                                                    ]?.field
+                                                                }
+                                                                onChange={(e) =>
+                                                                    setOverrideFieldDrafts(
+                                                                        (
+                                                                            prev,
+                                                                        ) => ({
+                                                                            ...prev,
+                                                                            [override.id]:
+                                                                                {
+                                                                                    ...(prev[
+                                                                                        override
+                                                                                            .id
+                                                                                    ] || {
+                                                                                        field: null,
+                                                                                    }),
+                                                                                    value: e
+                                                                                        .currentTarget
+                                                                                        .value,
+                                                                                },
+                                                                        }),
+                                                                    )
+                                                                }
+                                                                onKeyDown={(
+                                                                    e,
+                                                                ) =>
+                                                                    e.key ===
+                                                                        "Enter" &&
+                                                                    handleSaveNewOverrideExpressionField(
+                                                                        override.id,
+                                                                    )
+                                                                }
+                                                                onBlur={() =>
+                                                                    handleSaveNewOverrideExpressionField(
+                                                                        override.id,
+                                                                    )
+                                                                }
+                                                            />
+                                                            <DeleteActionIcon
+                                                                tooltip="Cannot remove empty field."
+                                                                enabled={false}
+                                                            />
+                                                        </Group>
+                                                    </>
+                                                )}
+
+                                                <ColorInput
+                                                    label="Override Color"
+                                                    value={override.color}
+                                                    size="xs"
+                                                    format="hex"
+                                                    onChange={(val) =>
+                                                        val &&
+                                                        handleColorOverrideColorChange(
+                                                            override.id,
+                                                            val,
+                                                            false,
+                                                        )
+                                                    }
+                                                    onChangeEnd={(val) =>
+                                                        val &&
+                                                        handleColorOverrideColorChange(
+                                                            override.id,
+                                                            val,
+                                                            true,
+                                                        )
+                                                    }
+                                                />
+                                            </AssetBuilderCardSectionGroup>
+                                        );
+                                    })}
+
+                                    <div
+                                        style={{
+                                            display: "flex",
+                                            justifyContent: "center",
+                                            marginTop: "0.5em",
+                                        }}
+                                    >
+                                        <ActionableTile>
+                                            <PlusActionIcon
+                                                onClick={handleAddColorOverride}
+                                                tooltip="Add new color override."
+                                            />
+                                        </ActionableTile>
+                                    </div>
                                 </>
                             )}
                             {/* Color from URI */}
@@ -1966,7 +2550,6 @@ export function StructureTab({
                                                     "color_from_uri",
                                                     {
                                                         ...currentComponent.color_from_uri!,
-                                                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                         format: val as any,
                                                     },
                                                     true,
@@ -1976,19 +2559,7 @@ export function StructureTab({
                                         <Select
                                             label="Schema"
                                             size="xs"
-                                            data={[
-                                                "whole_structure",
-                                                "entity",
-                                                "chain",
-                                                "auth_chain",
-                                                "residue",
-                                                "auth_residue",
-                                                "residue_range",
-                                                "auth_residue_range",
-                                                "atom",
-                                                "auth_atom",
-                                                "all_atomic",
-                                            ]}
+                                            data={schemaOptions}
                                             value={
                                                 currentComponent.color_from_uri
                                                     .schema
@@ -2000,7 +2571,6 @@ export function StructureTab({
                                                     "color_from_uri",
                                                     {
                                                         ...currentComponent.color_from_uri!,
-                                                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                         schema: val as any,
                                                     },
                                                     true,
@@ -2080,7 +2650,6 @@ export function StructureTab({
                                     </>
                                 )}
 
-                            {/* Color from Source */}
                             {getActiveColorProperty(currentComponent) ===
                                 "Color from source" &&
                                 currentComponent?.color_from_source && (
@@ -2088,19 +2657,7 @@ export function StructureTab({
                                         <Select
                                             label="Schema"
                                             size="xs"
-                                            data={[
-                                                "whole_structure",
-                                                "entity",
-                                                "chain",
-                                                "auth_chain",
-                                                "residue",
-                                                "auth_residue",
-                                                "residue_range",
-                                                "auth_residue_range",
-                                                "atom",
-                                                "auth_atom",
-                                                "all_atomic",
-                                            ]}
+                                            data={schemaOptions}
                                             value={
                                                 currentComponent
                                                     .color_from_source.schema
@@ -2112,7 +2669,6 @@ export function StructureTab({
                                                     "color_from_source",
                                                     {
                                                         ...currentComponent.color_from_source!,
-                                                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                         schema: val as any,
                                                     },
                                                     true,
@@ -2195,30 +2751,28 @@ export function StructureTab({
                                 color={currentComponent?.color || "#ffffff"}
                                 value={currentComponent?.opacity || 1.0}
                                 onChange={(val) => {
-                                    if (val && currentComponentId) {
+                                    if (val !== undefined && currentComponentId)
                                         onUpdateStructureComponentParam(
                                             currentComponentId,
                                             "opacity",
                                             val,
                                             false,
                                         );
-                                    }
                                 }}
                                 onChangeEnd={(val) => {
-                                    if (val && currentComponentId) {
+                                    if (val !== undefined && currentComponentId)
                                         onUpdateStructureComponentParam(
                                             currentComponentId,
                                             "opacity",
                                             val,
                                             true,
                                         );
-                                    }
                                 }}
-                            ></AlphaSlider>
+                            />
                         </AssetBuilderCardSectionGroup>
                     </Collapse>
 
-                    {/* Tooltips and labels settings for structure component tab. */}
+                    {/* Component Tooltips & Labels */}
                     <CollapseTrigger
                         title={"Tooltips & Labels"}
                         size={"md"}
@@ -2237,7 +2791,7 @@ export function StructureTab({
                                 },
                             );
                         }}
-                    ></CollapseTrigger>
+                    />
 
                     <Collapse
                         expanded={componentTooltipsAndLabelsSectionExpanded}
@@ -2249,83 +2803,70 @@ export function StructureTab({
                                 value={currentComponent?.label || ""}
                                 size="xs"
                                 onChange={(e) => {
-                                    if (currentComponentId) {
+                                    if (currentComponentId)
                                         onUpdateStructureComponentParam(
                                             currentComponentId,
                                             "label",
                                             e.currentTarget.value,
                                             false,
                                         );
-                                    }
                                 }}
                                 onBlur={(e) => {
-                                    if (currentComponentId) {
+                                    if (currentComponentId)
                                         onUpdateStructureComponentParam(
                                             currentComponentId,
                                             "label",
                                             e.currentTarget.value,
                                             true,
                                         );
-                                    }
                                 }}
                                 onKeyDown={(e) => {
-                                    if (
-                                        e.key === "Enter" &&
-                                        currentComponentId
-                                    ) {
+                                    if (e.key === "Enter" && currentComponentId)
                                         onUpdateStructureComponentParam(
                                             currentComponentId,
                                             "label",
                                             e.currentTarget.value,
                                             true,
                                         );
-                                    }
                                 }}
                             />
-
                             <TextInput
                                 label="Tooltip"
                                 placeholder="Text to show on hover"
                                 value={currentComponent?.tooltip || ""}
                                 size="xs"
                                 onChange={(e) => {
-                                    if (currentComponentId) {
+                                    if (currentComponentId)
                                         onUpdateStructureComponentParam(
                                             currentComponentId,
                                             "tooltip",
                                             e.currentTarget.value,
                                             false,
                                         );
-                                    }
                                 }}
                                 onBlur={(e) => {
-                                    if (currentComponentId) {
+                                    if (currentComponentId)
                                         onUpdateStructureComponentParam(
                                             currentComponentId,
                                             "tooltip",
                                             e.currentTarget.value,
                                             true,
                                         );
-                                    }
                                 }}
                                 onKeyDown={(e) => {
-                                    if (
-                                        e.key === "Enter" &&
-                                        currentComponentId
-                                    ) {
+                                    if (e.key === "Enter" && currentComponentId)
                                         onUpdateStructureComponentParam(
                                             currentComponentId,
                                             "tooltip",
                                             e.currentTarget.value,
                                             true,
                                         );
-                                    }
                                 }}
                             />
                         </AssetBuilderCardSectionGroup>
                     </Collapse>
 
-                    {/* Transform settings for structure component tab. */}
+                    {/* Component Transform */}
                     <CollapseTrigger
                         title={"Transform"}
                         size={"md"}
@@ -2342,7 +2883,7 @@ export function StructureTab({
                                 return nextState;
                             });
                         }}
-                    ></CollapseTrigger>
+                    />
 
                     <Collapse expanded={componentTransformSectionExpanded}>
                         <StructureComponentEntryTransformControls
@@ -2350,7 +2891,7 @@ export function StructureTab({
                             onUpdateStructureComponentParam={
                                 onUpdateStructureComponentParam
                             }
-                        ></StructureComponentEntryTransformControls>
+                        />
                     </Collapse>
                 </AssetBuilderCardSectionGroup>
             </Collapse>
