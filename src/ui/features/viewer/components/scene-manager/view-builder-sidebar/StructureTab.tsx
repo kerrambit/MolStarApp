@@ -379,7 +379,8 @@ export function StructureTab({
                 if (o.id !== overrideId) return o;
                 const expr = isSingleSelectorExpression(o.selector)
                     ? { ...o.selector }
-                    : ({} as Record<string, any>);
+                    : // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                      ({} as Record<string, any>);
 
                 if (val === undefined || val === "") {
                     delete expr[field];
@@ -406,7 +407,8 @@ export function StructureTab({
                 if (o.id !== overrideId) return o;
                 const expr = isSingleSelectorExpression(o.selector)
                     ? { ...o.selector }
-                    : ({} as Record<string, any>);
+                    : // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                      ({} as Record<string, any>);
                 const rawValue = expr[oldField];
                 const fieldDef = SELECTOR_EXPRESSION_FIELDS.find(
                     (f) => f.key === newField,
@@ -932,6 +934,7 @@ export function StructureTab({
                                                             "tooltip_from_uri",
                                                             {
                                                                 ...viewModel.tooltip_from_uri!,
+                                                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                                 format: val as any,
                                                             },
                                                             true,
@@ -953,6 +956,7 @@ export function StructureTab({
                                                             "tooltip_from_uri",
                                                             {
                                                                 ...viewModel.tooltip_from_uri!,
+                                                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                                 schema: val as any,
                                                             },
                                                             true,
@@ -1052,6 +1056,7 @@ export function StructureTab({
                                                             "tooltip_from_source",
                                                             {
                                                                 ...viewModel.tooltip_from_source!,
+                                                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                                 schema: val as any,
                                                             },
                                                             true,
@@ -1250,6 +1255,7 @@ export function StructureTab({
                                                             "label_from_uri",
                                                             {
                                                                 ...viewModel.label_from_uri!,
+                                                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                                 format: val as any,
                                                             },
                                                             true,
@@ -1270,6 +1276,7 @@ export function StructureTab({
                                                             "label_from_uri",
                                                             {
                                                                 ...viewModel.label_from_uri!,
+                                                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                                 schema: val as any,
                                                             },
                                                             true,
@@ -1367,6 +1374,7 @@ export function StructureTab({
                                                             "label_from_source",
                                                             {
                                                                 ...viewModel.label_from_source!,
+                                                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                                 schema: val as any,
                                                             },
                                                             true,
@@ -1977,8 +1985,9 @@ export function StructureTab({
                                         onUpdateStructureComponentFields(
                                             currentComponent.id,
                                             {
+                                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                 color: undefined as any,
-                                                colorOverrides: [], // <-- CLEAR OVERRIDES
+                                                colorOverrides: [],
                                                 color_from_uri: {
                                                     uri: "",
                                                     format: "json",
@@ -1992,8 +2001,9 @@ export function StructureTab({
                                         onUpdateStructureComponentFields(
                                             currentComponent.id,
                                             {
+                                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                 color: undefined as any,
-                                                colorOverrides: [], // <-- CLEAR OVERRIDES
+                                                colorOverrides: [],
                                                 color_from_source: {
                                                     category_name: "",
                                                     field_name: "",
@@ -2550,6 +2560,7 @@ export function StructureTab({
                                                     "color_from_uri",
                                                     {
                                                         ...currentComponent.color_from_uri!,
+                                                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                         format: val as any,
                                                     },
                                                     true,
@@ -2571,6 +2582,7 @@ export function StructureTab({
                                                     "color_from_uri",
                                                     {
                                                         ...currentComponent.color_from_uri!,
+                                                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                         schema: val as any,
                                                     },
                                                     true,
@@ -2669,6 +2681,7 @@ export function StructureTab({
                                                     "color_from_source",
                                                     {
                                                         ...currentComponent.color_from_source!,
+                                                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                         schema: val as any,
                                                     },
                                                     true,

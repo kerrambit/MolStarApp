@@ -372,7 +372,6 @@ export function getStructureNode(
 ): any {
     const builder = createMVSBuilder();
     const downloaded = builder.download({ url: assetId });
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const parsed = downloaded.parse({ format: viewModel.format as any });
 
     const baseStructureParams = {
@@ -439,7 +438,6 @@ export function getStructureNode(
         structureNode.tooltipFromSource(viewModel.tooltip_from_source as never);
 
     viewModel.components.forEach((comp: ComponentEntry) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const componentNode = structureNode.component({
             selector: comp.selector as any,
         });
@@ -493,7 +491,6 @@ export function getStructureNode(
         if (comp.representationType === "putty")
             repParams.size_theme = comp.size_theme;
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const representationNode = componentNode.representation(
             repParams as any,
         );
@@ -505,14 +502,11 @@ export function getStructureNode(
         } else if (comp.color_from_uri) {
             representationNode.colorFromUri(comp.color_from_uri);
         } else {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             representationNode.color({ color: comp.color as any });
 
             for (const override of comp.colorOverrides || []) {
                 representationNode.color({
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     color: override.color as any,
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     selector: override.selector as any,
                 });
             }
@@ -759,7 +753,6 @@ function readComponentEntry(
  * @returns the retrieved StructureViewModel or the default one if not found
  */
 export function getStructureViewModel(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     rootNode: any,
     assetId: string,
     defaultViewModel: StructureViewModel,
@@ -822,7 +815,6 @@ export function getStructureViewModel(
     }
 
     const componentNodes = (structureNode.children || []).filter(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (c: any) =>
             c.kind === "component" ||
             c.kind === "component_from_uri" ||
@@ -831,14 +823,12 @@ export function getStructureViewModel(
     if (componentNodes.length > 0) {
         const defaultComponent = defaultViewModel.components[0];
         let componentIdCounter = 0;
-        params.components = componentNodes.map(
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (c: any) =>
-                readComponentEntry(
-                    c,
-                    `component-${componentIdCounter++}`,
-                    defaultComponent,
-                ),
+        params.components = componentNodes.map((c: any) =>
+            readComponentEntry(
+                c,
+                `component-${componentIdCounter++}`,
+                defaultComponent,
+            ),
         );
     }
 
