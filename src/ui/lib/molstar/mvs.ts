@@ -683,9 +683,9 @@ export async function loadMVSIntoMolstar(
     try {
         await loadMVS(molstar, stateTree, {
             appendSnapshots: false,
-            keepCamera: true,
+            keepCamera: false,
             sourceUrl: sourceUrl,
-            keepCameraOrientation: true,
+            keepCameraOrientation: false,
             extensions: [],
             sanityChecks: true,
             defaultSnapshotIndex: currentIndex,
