@@ -4,8 +4,9 @@
  * @author Marek Eibel
  */
 
-import { Text, Divider, Stack } from "@mantine/core";
+import { Text } from "@mantine/core";
 import { SliderInputGroup } from "../../../../../components/common/slider-input-group/SliderInputGroup";
+import { AssetBuilderCardSectionGroup } from "./AssetBuilderCardSectionGroup";
 
 type TransformControlsProps = {
     translationX: number;
@@ -30,8 +31,12 @@ const ROTATION_MAX = 180;
 
 export function TransformControls(props: TransformControlsProps) {
     return (
-        <Stack gap="md" pb="sm">
-            <div>
+        <AssetBuilderCardSectionGroup divider={false}>
+            <AssetBuilderCardSectionGroup
+                gap={"0.25em"}
+                bottomMargin="xs"
+                topMargin="xs"
+            >
                 <Text fw={550} size="sm" mb="xs">
                     Translation (Å)
                 </Text>
@@ -80,11 +85,14 @@ export function TransformControls(props: TransformControlsProps) {
                         props.onTranslationZChange(val, true)
                     }
                 />
-            </div>
+            </AssetBuilderCardSectionGroup>
 
-            <Divider />
-
-            <div>
+            <AssetBuilderCardSectionGroup
+                divider={false}
+                gap={"0.25em"}
+                bottomMargin="xs"
+                topMargin="xs"
+            >
                 <Text fw={550} size="sm" mb="xs">
                     Rotation Angles (°)
                 </Text>
@@ -133,7 +141,7 @@ export function TransformControls(props: TransformControlsProps) {
                         props.onRotationZChange(val, true)
                     }
                 />
-            </div>
-        </Stack>
+            </AssetBuilderCardSectionGroup>
+        </AssetBuilderCardSectionGroup>
     );
 }

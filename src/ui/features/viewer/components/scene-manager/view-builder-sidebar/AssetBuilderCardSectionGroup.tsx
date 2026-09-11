@@ -6,6 +6,7 @@ import { Divider } from "@mantine/core";
 type AssetBuilderCardSectionGroupProps = React.PropsWithChildren<{
     divider?: boolean;
     bottomMargin?: "xs" | "sm" | "md" | "lg" | "xl";
+    topMargin?: "xs" | "sm" | "md" | "lg" | "xl";
     gap?: string | number;
 }>;
 
@@ -23,12 +24,13 @@ export const AssetBuilderCardSectionGroup = (
             style={{
                 display: "flex",
                 flexDirection: "column",
-                gap: props.gap || "1em",
-                paddingBottom: "1em",
+                gap: props.gap || "0.75em",
             }}
         >
             {props.children}
-            {anyDivider && <Divider mb={props.bottomMargin} />}
+            {anyDivider && (
+                <Divider mb={props.bottomMargin} mt={props.topMargin} />
+            )}
         </div>
     );
 };

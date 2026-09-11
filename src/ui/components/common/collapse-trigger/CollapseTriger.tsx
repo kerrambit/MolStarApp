@@ -9,7 +9,7 @@ import { IconChevronDown, IconChevronUp } from "@tabler/icons-react";
 
 type CollapseTriggerProps = {
     title: string;
-    size?: "lg" | "xs" | "sm" | "md" | "xl";
+    titleTextSize?: "lg" | "xs" | "sm" | "md" | "xl";
     expanded: boolean;
     onClick?: () => void;
 };
@@ -26,7 +26,7 @@ export function CollapseTrigger(props: CollapseTriggerProps) {
                 userSelect: "none",
             }}
         >
-            <Text size={props.size}>{props.title}</Text>
+            <Text size={props.titleTextSize}>{props.title}</Text>
             {props.expanded ? (
                 <IconChevronUp size={16} style={{ opacity: 0.7 }} />
             ) : (

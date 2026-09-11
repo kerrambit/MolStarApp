@@ -62,11 +62,11 @@ export function VolumeTab({
 
     // Render the component.
     return (
-        <div>
+        <AssetBuilderCardSectionGroup divider={false}>
             {/* General settings for volume tab. */}
             <CollapseTrigger
                 title={"General"}
-                size={"md"}
+                titleTextSize={"md"}
                 expanded={generalSectionExpanded}
                 onClick={() => {
                     setGeneralSectionExpanded((prev) => {
@@ -82,7 +82,11 @@ export function VolumeTab({
             ></CollapseTrigger>
 
             <Collapse expanded={generalSectionExpanded}>
-                <AssetBuilderCardSectionGroup divider={true}>
+                <AssetBuilderCardSectionGroup
+                    divider={true}
+                    topMargin="sm"
+                    bottomMargin="sm"
+                >
                     <Select
                         label="Format"
                         disabled
@@ -137,7 +141,7 @@ export function VolumeTab({
             {/* Representation settings for volume tab. */}
             <CollapseTrigger
                 title={"Representation"}
-                size={"md"}
+                titleTextSize={"md"}
                 expanded={representationSectionExpanded}
                 onClick={() => {
                     setRepresentationSectionExpanded((prev) => {
@@ -153,7 +157,11 @@ export function VolumeTab({
             ></CollapseTrigger>
 
             <Collapse expanded={representationSectionExpanded}>
-                <AssetBuilderCardSectionGroup divider={true}>
+                <AssetBuilderCardSectionGroup
+                    divider={true}
+                    topMargin="sm"
+                    bottomMargin="sm"
+                >
                     <Group mt="xs">
                         <Checkbox
                             label="Show wireframe"
@@ -202,7 +210,7 @@ export function VolumeTab({
             {/* Transform settings for volume tab. */}
             <CollapseTrigger
                 title={"Transform"}
-                size={"md"}
+                titleTextSize={"md"}
                 expanded={transformSectionExpanded}
                 onClick={() => {
                     setTransformSectionExpanded((prev) => {
@@ -223,6 +231,6 @@ export function VolumeTab({
                     onUpdateParam={onUpdateParam}
                 ></VolumeTransformControls>
             </Collapse>
-        </div>
+        </AssetBuilderCardSectionGroup>
     );
 }

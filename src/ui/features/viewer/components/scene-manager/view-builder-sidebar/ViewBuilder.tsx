@@ -101,7 +101,7 @@ export function ViewBuilder(props: ViewBuilderProps) {
 
             <CollapseTrigger
                 title={"Filters"}
-                size="lg"
+                titleTextSize="lg"
                 expanded={areFiltersExpanded}
                 onClick={() => {
                     setAreFiltersExpanded((prev) => {
