@@ -53,19 +53,22 @@ export function selectorToString(selector: Selector, truncate = true): string {
     if (typeof selector === "string") {
         return selector;
     }
+
+    const maxStringLenght = 36;
+
     const formatExpression = (expr: SelectorExpression) => {
         const parts = Object.entries(expr)
             .filter(([, value]) => value !== undefined)
             .map(([key, value]) => `${key}: ${value}`);
         const result = `{ ${parts.join(", ")} }`;
-        return truncate && result.length > 24
-            ? `${result.substring(0, 24)}...`
+        return truncate && result.length > maxStringLenght
+            ? `${result.substring(0, maxStringLenght)}...`
             : result;
     };
     if (Array.isArray(selector)) {
         const result = `[ ${selector.map(formatExpression).join(", ")} ]`;
-        return truncate && result.length > 5
-            ? `${result.substring(0, 5)}...`
+        return truncate && result.length > maxStringLenght
+            ? `${result.substring(0, maxStringLenght)}...`
             : result;
     }
     return formatExpression(selector);
