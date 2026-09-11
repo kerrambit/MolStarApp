@@ -12,8 +12,7 @@ import {
     getPrioritizedRenderStrategy,
     isExtensionSupported,
 } from "../../../../../config/assetsDefinitions";
-import { VolumeTab } from "./VolumeTab";
-import { StructureTab } from "./StructureTab";
+import { StructureTab } from "./structure/StructureTab";
 import type {
     ComponentEntry,
     StructureViewModel,
@@ -21,6 +20,7 @@ import type {
 } from "../../../models/MvsViewModels";
 import type { TabType } from "../../../hooks/useViewBuilder";
 import { pushInfoNotification } from "../../../../../services/NotificationService";
+import { VolumeTab } from "./volume/VolumeTab";
 
 interface AssetBuilderCardProps {
     viewKey: string;

@@ -5,8 +5,8 @@
  */
 
 import { TextInput } from "@mantine/core";
-import type { ComponentEntry } from "../../../models/MvsViewModels";
-import { AssetBuilderCardSectionGroup } from "./AssetBuilderCardSectionGroup";
+import type { ComponentEntry } from "../../../../models/MvsViewModels";
+import { AssetBuilderCardSectionGroup } from "../AssetBuilderCardSectionGroup";
 import type { UpdateComponentParam } from "./structureTabHelpers";
 
 type ComponentTooltipsAndLabelsSectionProps = {

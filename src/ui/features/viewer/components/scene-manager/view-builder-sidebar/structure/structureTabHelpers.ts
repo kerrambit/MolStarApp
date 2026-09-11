@@ -9,7 +9,7 @@ import type {
     PredefinedSelector,
     SelectorExpression,
     StructureViewModel,
-} from "../../../models/MvsViewModels";
+} from "../../../../models/MvsViewModels";
 
 // Callback types shared by the structure tab and its section components.
 export type UpdateViewModelParam = (

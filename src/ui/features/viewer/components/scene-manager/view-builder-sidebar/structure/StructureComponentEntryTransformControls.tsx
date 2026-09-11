@@ -4,8 +4,8 @@
  * @author Marek Eibel
  */
 
-import type { ComponentEntry } from "../../../models/MvsViewModels";
-import { TransformControls } from "./TransformControls";
+import type { ComponentEntry } from "../../../../models/MvsViewModels";
+import { TransformControls } from "../TransformControls";
 
 type StructureComponentEntryTransformControlsProps = {
     component?: ComponentEntry;

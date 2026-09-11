@@ -11,9 +11,9 @@ import {
     type DataFromSourceParams,
     type DataFromUriParams,
     type StructureViewModel,
-} from "../../../models/MvsViewModels";
-import { SegmentedController } from "../../../../../components/common/segmented-controller/SegmentedController";
-import { AssetBuilderCardSectionGroup } from "./AssetBuilderCardSectionGroup";
+} from "../../../../models/MvsViewModels";
+import { SegmentedController } from "../../../../../../components/common/segmented-controller/SegmentedController";
+import { AssetBuilderCardSectionGroup } from "../AssetBuilderCardSectionGroup";
 import {
     schemaOptions,
     type UpdateViewModelFields,
@@ -86,6 +86,7 @@ export function GlobalTooltipsAndLabelsSection({
                     val &&
                     onUpdateParam(
                         paramKey,
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         { ...data, format: val as any },
                         true,
                     )
@@ -100,6 +101,7 @@ export function GlobalTooltipsAndLabelsSection({
                     val &&
                     onUpdateParam(
                         paramKey,
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         { ...data, schema: val as any },
                         true,
                     )
@@ -167,6 +169,7 @@ export function GlobalTooltipsAndLabelsSection({
                     val &&
                     onUpdateParam(
                         paramKey,
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         { ...data, schema: val as any },
                         true,
                     )

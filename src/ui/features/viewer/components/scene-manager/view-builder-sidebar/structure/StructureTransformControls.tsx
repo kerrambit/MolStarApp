@@ -4,8 +4,8 @@
  * @author Marek Eibel
  */
 
-import type { StructureViewModel } from "../../../models/MvsViewModels";
-import { TransformControls } from "./TransformControls";
+import type { StructureViewModel } from "../../../../models/MvsViewModels";
+import { TransformControls } from "../TransformControls";
 
 type StructureTransformControlsProps = {
     viewModel: StructureViewModel;

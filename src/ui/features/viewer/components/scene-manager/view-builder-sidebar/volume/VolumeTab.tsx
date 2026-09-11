@@ -5,8 +5,6 @@
  */
 
 import { useState } from "react";
-import { CollapseTrigger } from "../../../../../components/common/collapse-trigger/CollapseTriger";
-import { UiLocalStorageService } from "../../../../../services/UiLocalStorageService";
 import {
     AlphaSlider,
     Checkbox,
@@ -16,11 +14,13 @@ import {
     NumberInput,
     Select,
 } from "@mantine/core";
-import { getAllParserTypes } from "../../../../../config/assetsDefinitions";
-import { pushWarningNotification } from "../../../../../services/NotificationService";
-import type { VolumeViewModel } from "../../../models/MvsViewModels";
-import { VolumeTransformControls } from "./VolumeTransformControls";
-import { AssetBuilderCardSectionGroup } from "./AssetBuilderCardSectionGroup";
+import type { VolumeViewModel } from "../../../../models/MvsViewModels";
+import { CollapseTrigger } from "../../../../../../components/common/collapse-trigger/CollapseTriger";
+import { getAllParserTypes } from "../../../../../../config/assetsDefinitions";
+import { pushWarningNotification } from "../../../../../../services/NotificationService";
+import  { UiLocalStorageService } from "../../../../../../services/UiLocalStorageService";
+import { AssetBuilderCardSectionGroup } from "../AssetBuilderCardSectionGroup";
+import  { VolumeTransformControls } from "./VolumeTransformControls";
 
 type VolumeTabProps = {
     viewKey: string;

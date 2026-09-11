@@ -5,9 +5,9 @@
  */
 
 import { Checkbox } from "@mantine/core";
-import type { ComponentEntry } from "../../../models/MvsViewModels";
-import { AssetBuilderCardSectionGroup } from "./AssetBuilderCardSectionGroup";
-import { FocusControls } from "./FocusControls";
+import type { ComponentEntry } from "../../../../models/MvsViewModels";
+import { AssetBuilderCardSectionGroup } from "../AssetBuilderCardSectionGroup";
+import { FocusControls } from "../FocusControls";
 import type { UpdateComponentParam } from "./structureTabHelpers";
 
 type ComponentFocusSectionProps = {

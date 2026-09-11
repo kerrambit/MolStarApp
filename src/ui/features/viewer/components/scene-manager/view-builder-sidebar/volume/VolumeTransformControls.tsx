@@ -4,8 +4,8 @@
  * @author Marek Eibel
  */
 
-import type { VolumeViewModel } from "../../../models/MvsViewModels";
-import { TransformControls } from "./TransformControls";
+import type { VolumeViewModel } from "../../../../models/MvsViewModels";
+import { TransformControls } from "../TransformControls";
 
 type VolumeTransformControlsProps = {
     viewModel: VolumeViewModel;

@@ -16,9 +16,9 @@ import {
     getActiveColorProperty,
     type ComponenentEntryColorProperty,
     type ComponentEntry,
-} from "../../../models/MvsViewModels";
-import { SegmentedController } from "../../../../../components/common/segmented-controller/SegmentedController";
-import { AssetBuilderCardSectionGroup } from "./AssetBuilderCardSectionGroup";
+} from "../../../../models/MvsViewModels";
+import { SegmentedController } from "../../../../../../components/common/segmented-controller/SegmentedController";
+import { AssetBuilderCardSectionGroup } from "../AssetBuilderCardSectionGroup";
 import { ColorOverridesSection } from "./ColorOverridesSection";
 import {
     normalizeToHex,
@@ -26,7 +26,7 @@ import {
     type UpdateComponentFields,
     type UpdateComponentParam,
 } from "./structureTabHelpers";
-import { useStructureComponentCache } from "../../../hooks/useStructureComponentCache";
+import { useStructureComponentCache } from "../../../../hooks/useStructureComponentCache";
 
 // Cache keys for stashing the color-mode state being switched away from.
 const COLOR_CACHE_KEY = "colorplain";
@@ -106,6 +106,7 @@ export function ComponentRepresentationSection({
             onUpdateStructureComponentFields(
                 component.id,
                 {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     color: undefined as any,
                     colorOverrides: [],
                     color_from_uri: cached ?? {
@@ -124,6 +125,7 @@ export function ComponentRepresentationSection({
             onUpdateStructureComponentFields(
                 component.id,
                 {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     color: undefined as any,
                     colorOverrides: [],
                     color_from_source: cached ?? {
@@ -277,6 +279,7 @@ export function ComponentRepresentationSection({
                                     "color_from_uri",
                                     {
                                         ...component.color_from_uri!,
+                                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                         format: val as any,
                                     },
                                     true,
@@ -295,6 +298,7 @@ export function ComponentRepresentationSection({
                                     "color_from_uri",
                                     {
                                         ...component.color_from_uri!,
+                                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                         schema: val as any,
                                     },
                                     true,
@@ -375,6 +379,7 @@ export function ComponentRepresentationSection({
                                     "color_from_source",
                                     {
                                         ...component.color_from_source!,
+                                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                         schema: val as any,
                                     },
                                     true,

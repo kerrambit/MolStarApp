@@ -6,10 +6,10 @@
 
 import { useState } from "react";
 import { Select } from "@mantine/core";
-import { getAllParserTypes } from "../../../../../config/assetsDefinitions";
-import { UiLocalStorageService } from "../../../../../services/UiLocalStorageService";
-import { AssetBuilderCardSectionGroup } from "./AssetBuilderCardSectionGroup";
-import { CollapsibleSection } from "./CollapsibleSection";
+import { getAllParserTypes } from "../../../../../../config/assetsDefinitions";
+import { UiLocalStorageService } from "../../../../../../services/UiLocalStorageService";
+import { AssetBuilderCardSectionGroup } from "../AssetBuilderCardSectionGroup";
+import { CollapsibleSection } from "../CollapsibleSection";
 import { AdvancedGeneralSection } from "./AdvancedGeneralSection";
 import { GlobalTooltipsAndLabelsSection } from "./GlobalTooltipsAndLabelsSection";
 import { GlobalTransformSection } from "./GlobalTransformSection";
@@ -17,7 +17,7 @@ import type {
     UpdateViewModelFields,
     UpdateViewModelParam,
 } from "./structureTabHelpers";
-import type { StructureViewModel } from "../../../models/MvsViewModels";
+import type { StructureViewModel } from "../../../../models/MvsViewModels";
 
 type GeneralSectionProps = {
     viewKey: string;

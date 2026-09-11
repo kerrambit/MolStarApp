@@ -1,8 +1,8 @@
-import { DeleteActionIcon } from "../../../../../components/common/actionables/actions-icons/DeleteActionIcon";
+import { DeleteActionIcon } from "../../../../../../components/common/actionables/actions-icons/DeleteActionIcon";
 import {
     selectorToString,
     type ComponentEntry,
-} from "../../../models/MvsViewModels";
+} from "../../../../models/MvsViewModels";
 
 type ComponentEntryTabContentProps = {
     component: ComponentEntry;

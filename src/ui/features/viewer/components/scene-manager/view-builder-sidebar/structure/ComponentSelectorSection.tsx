@@ -14,20 +14,20 @@ import {
     type PredefinedSelector,
     type Selector,
     type SelectorExpression,
-} from "../../../models/MvsViewModels";
-import { SegmentedController } from "../../../../../components/common/segmented-controller/SegmentedController";
-import { AssetBuilderCardSectionGroup } from "./AssetBuilderCardSectionGroup";
-import { ActionableList } from "../../../../../components/common/actionables/ActionableList";
-import { ActionableListItem } from "../../../../../components/common/actionables/ActionableListItem";
-import { DeleteActionIcon } from "../../../../../components/common/actionables/actions-icons/DeleteActionIcon";
-import { PlusActionIcon } from "../../../../../components/common/actionables/actions-icons/PlusActionIcon";
-import { ActionableTile } from "../../../../../components/common/actionables/ActionableTile";
+} from "../../../../models/MvsViewModels";
+import { SegmentedController } from "../../../../../../components/common/segmented-controller/SegmentedController";
+import { AssetBuilderCardSectionGroup } from "../AssetBuilderCardSectionGroup";
+import { ActionableList } from "../../../../../../components/common/actionables/ActionableList";
+import { ActionableListItem } from "../../../../../../components/common/actionables/ActionableListItem";
+import { DeleteActionIcon } from "../../../../../../components/common/actionables/actions-icons/DeleteActionIcon";
+import { PlusActionIcon } from "../../../../../../components/common/actionables/actions-icons/PlusActionIcon";
+import { ActionableTile } from "../../../../../../components/common/actionables/ActionableTile";
 import {
     PREDEFINED_SELECTOR_OPTIONS,
     SELECTOR_EXPRESSION_FIELDS,
     type UpdateComponentParam,
 } from "./structureTabHelpers";
-import { useStructureComponentCache } from "../../../hooks/useStructureComponentCache";
+import { useStructureComponentCache } from "../../../../hooks/useStructureComponentCache";
 
 type ComponentSelectorType = "PredefinedSelector" | "ExpressionSelector";
 

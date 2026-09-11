@@ -9,21 +9,21 @@ import { Scroller, Tabs } from "@mantine/core";
 import {
     selectorToString,
     type ComponentEntry,
-} from "../../../models/MvsViewModels";
-import { AssetBuilderCardSectionGroup } from "./AssetBuilderCardSectionGroup";
-import { CollapsibleSection } from "./CollapsibleSection";
+} from "../../../../models/MvsViewModels";
+import { AssetBuilderCardSectionGroup } from "../AssetBuilderCardSectionGroup";
+import { CollapsibleSection } from "../CollapsibleSection";
 import { ComponentSelectorSection } from "./ComponentSelectorSection";
 import { ComponentRepresentationSection } from "./ComponentRepresentationSection";
 import { ComponentTooltipsAndLabelsSection } from "./ComponentTooltipsAndLabelsSection";
 import { ComponentFocusSection } from "./ComponentFocusSection";
 import { StructureComponentEntryTransformControls } from "./StructureComponentEntryTransformControls";
-import { UiLocalStorageService } from "../../../../../services/UiLocalStorageService";
+import { UiLocalStorageService } from "../../../../../../services/UiLocalStorageService";
 import type {
     UpdateComponentFields,
     UpdateComponentParam,
 } from "./structureTabHelpers";
 import { ComponentEntryTabContent } from "./ComponentEntryTabContent";
-import { useAppearance } from "../../../../../hooks/useAppearance";
+import { useAppearance } from "../../../../../../hooks/useAppearance";
 
 type ComponentsSectionProps = {
     viewKey: string;

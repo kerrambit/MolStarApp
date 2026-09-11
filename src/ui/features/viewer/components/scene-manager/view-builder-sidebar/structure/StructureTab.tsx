@@ -6,14 +6,14 @@
 
 import { GeneralSection } from "./GeneralSection";
 import { ComponentsSection } from "./ComponentsSection";
-import type { StructureViewModel } from "../../../models/MvsViewModels";
+import type { StructureViewModel } from "../../../../models/MvsViewModels";
 import type {
     UpdateComponentFields,
     UpdateComponentParam,
     UpdateViewModelFields,
     UpdateViewModelParam,
 } from "./structureTabHelpers";
-import { AssetBuilderCardSectionGroup } from "./AssetBuilderCardSectionGroup";
+import { AssetBuilderCardSectionGroup } from "../AssetBuilderCardSectionGroup";
 
 type StructureTabProps = {
     viewKey: string;

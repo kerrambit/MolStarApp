@@ -20,21 +20,21 @@ import {
     type PredefinedSelector,
     type Selector,
     type SelectorExpression,
-} from "../../../models/MvsViewModels";
-import { SegmentedController } from "../../../../../components/common/segmented-controller/SegmentedController";
-import { AssetBuilderCardSectionGroup } from "./AssetBuilderCardSectionGroup";
-import { ActionableList } from "../../../../../components/common/actionables/ActionableList";
-import { ActionableListItem } from "../../../../../components/common/actionables/ActionableListItem";
-import { DeleteActionIcon } from "../../../../../components/common/actionables/actions-icons/DeleteActionIcon";
-import { PlusActionIcon } from "../../../../../components/common/actionables/actions-icons/PlusActionIcon";
-import { ActionableTile } from "../../../../../components/common/actionables/ActionableTile";
+} from "../../../../models/MvsViewModels";
+import { SegmentedController } from "../../../../../../components/common/segmented-controller/SegmentedController";
+import { AssetBuilderCardSectionGroup } from "../AssetBuilderCardSectionGroup";
+import { ActionableList } from "../../../../../../components/common/actionables/ActionableList";
+import { ActionableListItem } from "../../../../../../components/common/actionables/ActionableListItem";
+import { DeleteActionIcon } from "../../../../../../components/common/actionables/actions-icons/DeleteActionIcon";
+import { PlusActionIcon } from "../../../../../../components/common/actionables/actions-icons/PlusActionIcon";
+import { ActionableTile } from "../../../../../../components/common/actionables/ActionableTile";
 import {
     normalizeToHex,
     PREDEFINED_SELECTOR_OPTIONS,
     SELECTOR_EXPRESSION_FIELDS,
     type UpdateComponentParam,
 } from "./structureTabHelpers";
-import { useStructureComponentCache } from "../../../hooks/useStructureComponentCache";
+import { useStructureComponentCache } from "../../../../hooks/useStructureComponentCache";
 
 type ColorOverridesSectionProps = {
     component: ComponentEntry;
@@ -171,7 +171,8 @@ export function ColorOverridesSection({
                 if (o.id !== overrideId) return o;
                 const expr = isSingleSelectorExpression(o.selector)
                     ? { ...o.selector }
-                    : ({} as Record<string, any>);
+                    : // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                      ({} as Record<string, any>);
                 if (val === undefined || val === "") {
                     delete expr[field];
                 } else {
@@ -193,7 +194,8 @@ export function ColorOverridesSection({
                 if (o.id !== overrideId) return o;
                 const expr = isSingleSelectorExpression(o.selector)
                     ? { ...o.selector }
-                    : ({} as Record<string, any>);
+                    : // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                      ({} as Record<string, any>);
                 const rawValue = expr[oldField];
                 const fieldDef = SELECTOR_EXPRESSION_FIELDS.find(
                     (f) => f.key === newField,

@@ -4,7 +4,7 @@
  * @author Marek Eibel
  */
 
-import type { StructureViewModel } from "../../../models/MvsViewModels";
+import type { StructureViewModel } from "../../../../models/MvsViewModels";
 import { StructureTransformControls } from "./StructureTransformControls";
 import type { UpdateViewModelParam } from "./structureTabHelpers";
 

@@ -5,10 +5,11 @@
  */
 
 import { NumberInput, TextInput } from "@mantine/core";
-import { AssetBuilderCardSectionGroup } from "./AssetBuilderCardSectionGroup";
-import { IJKControls } from "./IJKControls";
+
 import type { UpdateViewModelParam } from "./structureTabHelpers";
-import type { StructureViewModel } from "../../../models/MvsViewModels";
+import type { StructureViewModel } from "../../../../models/MvsViewModels";
+import { AssetBuilderCardSectionGroup } from "../AssetBuilderCardSectionGroup";
+import { IJKControls } from "../IJKControls";
 
 type AdvancedGeneralSectionProps = {
     viewModel: StructureViewModel;
