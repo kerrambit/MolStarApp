@@ -23,10 +23,10 @@ export function DeleteActionIcon(props: DeleteActionIconProps) {
             disabled={!enabled}
             variant="subtle"
             color="red"
-            onClick={props.onClick}
+            onClick={enabled ? props.onClick : undefined}
             title={props.tooltip}
         >
-            <IconTrash size={18} color={enabled !== true ? "grey" : "red"} />
+            <IconTrash size={18} color={enabled ? "red" : "grey"} />
         </ActionIcon>
     );
 }
