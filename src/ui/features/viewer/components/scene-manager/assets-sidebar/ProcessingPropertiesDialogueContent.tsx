@@ -97,7 +97,7 @@ export function ProcessingPropertiesDialogueContent({
                     <div style={{ display: "flex", flexDirection: "column" }}>
                         <CollapseTrigger
                             title={"Volume"}
-                            size="lg"
+                            titleTextSize="lg"
                             expanded={isVolumeExpanded}
                             onClick={() => {
                                 setVolumeExpanded((prev) => !prev);
@@ -175,7 +175,7 @@ export function ProcessingPropertiesDialogueContent({
                     <div style={{ display: "flex", flexDirection: "column" }}>
                         <CollapseTrigger
                             title={"Segmentation"}
-                            size="lg"
+                            titleTextSize="lg"
                             expanded={isSegmentationExpanded}
                             onClick={() => {
                                 setSegmentationExpanded((prev) => !prev);
@@ -195,7 +195,7 @@ export function ProcessingPropertiesDialogueContent({
                     <div style={{ display: "flex", flexDirection: "column" }}>
                         <CollapseTrigger
                             title={"Bundling"}
-                            size="lg"
+                            titleTextSize="lg"
                             expanded={isBundlingExpanded}
                             onClick={() => {
                                 setBundlingExpanded((prev) => !prev);

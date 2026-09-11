@@ -67,7 +67,7 @@ export function ProcessingJobCard({ job }: ProcessingJobCardProps) {
                 </Text>
                 <CollapseTrigger
                     title={"Stages"}
-                    size="sm"
+                    titleTextSize="sm"
                     expanded={isStagesListExpanded}
                     onClick={() => {
                         setStagesListExpanded((prev) => {
