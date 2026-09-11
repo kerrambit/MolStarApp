@@ -29,6 +29,7 @@ import { type MVSData_States } from "molstar/lib/extensions/mvs/mvs-data";
 import { useRegimeStore } from "../../../stores/regimeStore";
 import { useManagedAssetsStore } from "../../../stores/managedAssetsStore";
 import {
+    createDefaultComponentEntry,
     DEFAULT_STRUCTURE_VIEW_MODEL,
     DEFAULT_VOLUME_VIEW_MODEL,
     type ComponentEntry,
@@ -446,6 +447,64 @@ export function useViewBuilder(viewKey: string) {
     };
 
     /**
+     * Function which adds a new default component to a structure asset's component
+     * list and optionally syncs it to Molstar. Returns the new component's ID so
+     * the caller can immediately select/expand it in the UI.
+     */
+    const addStructureComponentForAsset = async (
+        assetId: AssetId,
+        syncToMolstar: boolean,
+    ): Promise<string> => {
+        const currentVm = getStructureViewModelForAsset(assetId);
+
+        // IDs are re-derived positionally by getStructureViewModel() on every
+        // read from the Molstar tree (readComponentEntry always assigns
+        // `component-${index}`), so a random UUID here would stop matching
+        // after the next resync. Use the same positional scheme up front so
+        // the active-tab lookup keeps working across the round-trip.
+        const newId = `component-${currentVm.components.length}`;
+        const newComponent = createDefaultComponentEntry(newId);
+
+        await updateStructureViewModelFieldsForAsset(
+            assetId,
+            { components: [...currentVm.components, newComponent] },
+            syncToMolstar,
+        );
+
+        return newId;
+    };
+
+    /**
+     * Function which deletes a component (by ID) from a structure asset's component
+     * list and optionally syncs it to Molstar. Refuses to delete the last remaining
+     * component, since a structure with zero components is not valid MVS.
+     */
+    const deleteStructureComponentForAsset = async (
+        assetId: AssetId,
+        componentId: string,
+        syncToMolstar: boolean,
+    ) => {
+        const currentVm = getStructureViewModelForAsset(assetId);
+
+        if (currentVm.components.length <= 1) {
+            pushErrorNotification(
+                `Cannot delete the last remaining component of a structure!`,
+            );
+            return;
+        }
+
+        const updatedComponents = currentVm.components.filter(
+            (comp) => comp.id !== componentId,
+        );
+
+        await updateStructureViewModelFieldsForAsset(
+            assetId,
+            { components: updatedComponents },
+            syncToMolstar,
+        );
+    };
+
+    /**
      * Function which updates MULTIPLE structure view model fields atomically and optionally syncs to Molstar.
      * Use this instead of several sequential `updateStructureViewModelForAsset` calls whenever more than one
      * field must change together (e.g. switching tooltip/label mode) - sequential single-field calls race
@@ -727,6 +786,8 @@ export function useViewBuilder(viewKey: string) {
         updateVolumeViewModelForAsset,
         updateStructureViewModelForAsset,
         updateStructureComponentViewModel,
+        addStructureComponentForAsset,
+        deleteStructureComponentForAsset,
         updateStructureViewModelFieldsForAsset,
         updateStructureComponentViewModelFields,
         handleAssetToggle,

@@ -122,6 +122,8 @@ type StructureTabProps = {
         fields: Partial<ComponentEntry>,
         syncToMolstar: boolean,
     ) => Promise<void>;
+    onAddStructureComponent: () => Promise<string>;
+    onDeleteStructureComponent: (componentId: string) => Promise<void>;
 };
 
 export function StructureTab({
@@ -132,6 +134,8 @@ export function StructureTab({
     onUpdateStructureComponentParam,
     onUpdateFields,
     onUpdateStructureComponentFields,
+    onAddStructureComponent,
+    onDeleteStructureComponent,
 }: StructureTabProps) {
     // 1. DYNAMIC COMPONENT DERIVATION
     const [currentComponentId, setCurrentComponentId] = useState<
@@ -1445,7 +1449,10 @@ export function StructureTab({
                         onChange={(value) => {
                             if (!value) return;
                             if (value === "+") {
-                                console.log("New component shall be added.");
+                                onAddStructureComponent().then((newId) => {
+                                    console.log(newId);
+                                    setCurrentComponentId(newId);
+                                });
                                 return;
                             }
                             setCurrentComponentId(value);
@@ -1485,8 +1492,8 @@ export function StructureTab({
                                                 onClick={(e) => {
                                                     e.preventDefault();
                                                     e.stopPropagation();
-                                                    console.log(
-                                                        "Delete component.",
+                                                    onDeleteStructureComponent(
+                                                        component.id,
                                                     );
                                                 }}
                                             />
@@ -1968,7 +1975,7 @@ export function StructureTab({
                                         label={
                                             (currentComponent?.colorOverrides
                                                 ?.length ?? 0) > 0
-                                                ? "Base Color (Fallback)"
+                                                ? "Base Color"
                                                 : "Color"
                                         }
                                         value={normalizeToHex(

@@ -57,6 +57,8 @@ interface AssetBuilderCardProps {
         fields: Partial<ComponentEntry>,
         syncToMolstar: boolean,
     ) => Promise<void>;
+    onAddStructureComponent: () => Promise<string>;
+    onDeleteStructureComponent: (componentId: string) => Promise<void>;
 }
 
 export function AssetBuilderCard({
@@ -74,6 +76,8 @@ export function AssetBuilderCard({
     onUpdateStructureComponentParam,
     onUpdateStructureFields,
     onUpdateStructureComponentFields,
+    onAddStructureComponent,
+    onDeleteStructureComponent,
 }: AssetBuilderCardProps) {
     // Store active tab.
     const [activeTab, setActiveTab] = useState<TabType>(() => {
@@ -194,6 +198,10 @@ export function AssetBuilderCard({
                             onUpdateFields={onUpdateStructureFields}
                             onUpdateStructureComponentFields={
                                 onUpdateStructureComponentFields
+                            }
+                            onAddStructureComponent={onAddStructureComponent}
+                            onDeleteStructureComponent={
+                                onDeleteStructureComponent
                             }
                         ></StructureTab>
                     )}

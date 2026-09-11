@@ -44,6 +44,8 @@ export function ViewBuilder(props: ViewBuilderProps) {
         updateVolumeViewModelForAsset,
         updateStructureViewModelForAsset,
         updateStructureComponentViewModel,
+        addStructureComponentForAsset,
+        deleteStructureComponentForAsset,
         updateStructureViewModelFieldsForAsset,
         updateStructureComponentViewModelFields,
         handleAssetToggle,
@@ -284,6 +286,19 @@ export function ViewBuilder(props: ViewBuilderProps) {
                                         component,
                                         fields,
                                         sync,
+                                    )
+                                }
+                                onAddStructureComponent={() =>
+                                    addStructureComponentForAsset(
+                                        asset.id,
+                                        true,
+                                    )
+                                }
+                                onDeleteStructureComponent={(component) =>
+                                    deleteStructureComponentForAsset(
+                                        asset.id,
+                                        component,
+                                        true,
                                     )
                                 }
                             />
