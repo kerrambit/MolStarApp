@@ -34,9 +34,12 @@ import {
     SELECTOR_EXPRESSION_FIELDS,
     type UpdateComponentParam,
 } from "./structureTabHelpers";
+import { useStructureComponentCache } from "../../../hooks/useStructureComponentCache";
 
 type ColorOverridesSectionProps = {
     component: ComponentEntry;
+    assetId: string;
+    viewKey: string;
     onUpdateStructureComponentParam: UpdateComponentParam;
 };
 
@@ -46,8 +49,17 @@ type ColorOverridesSectionProps = {
  */
 export function ColorOverridesSection({
     component,
+    assetId,
+    viewKey,
     onUpdateStructureComponentParam,
 }: ColorOverridesSectionProps) {
+    // Stash/restore each override's selector when switching its mode.
+    const { readCache, writeCache } = useStructureComponentCache(
+        assetId,
+        viewKey,
+        component.id,
+    );
+
     // Write the whole colorOverrides array back to the component.
     const setOverrides = (overrides: ColorOverride[], sync: boolean) => {
         onUpdateStructureComponentParam(
@@ -85,12 +97,49 @@ export function ColorOverridesSection({
         );
     };
 
+    // Per-override cache keys for the selector of the mode being switched away
+    // from. Keyed by override INDEX, not id — override ids are UI-only random
+    // UUIDs re-derived on every read from the Molstar tree, so they do not
+    // survive the sync round-trip (component ids are positional and stable).
+    const overridePredefinedCacheKey = (overrideIndex: number) =>
+        `selepredefined-${overrideIndex}`;
+    const overrideExpressionCacheKey = (overrideIndex: number) =>
+        `seleexpression-${overrideIndex}`;
+
     const handleColorOverrideSelectorModeChange = (
         overrideId: string,
+        overrideIndex: number,
         mode: "PredefinedSelector" | "ExpressionSelector",
     ) => {
-        const nextSelector: Selector =
-            mode === "PredefinedSelector" ? "all" : {};
+        const current = (component.colorOverrides || []).find(
+            (o) => o.id === overrideId,
+        );
+        if (!current) return;
+        const currentIsPredefined = typeof current.selector === "string";
+        if (currentIsPredefined === (mode === "PredefinedSelector")) return;
+
+        // Stash the selector of the mode being left and restore the cached one.
+        let nextSelector: Selector;
+        if (currentIsPredefined) {
+            writeCache(
+                overridePredefinedCacheKey(overrideIndex),
+                current.selector,
+            );
+            nextSelector =
+                (readCache(overrideExpressionCacheKey(overrideIndex)) as
+                    | Selector
+                    | undefined) ?? {};
+        } else {
+            writeCache(
+                overrideExpressionCacheKey(overrideIndex),
+                current.selector,
+            );
+            nextSelector =
+                (readCache(overridePredefinedCacheKey(overrideIndex)) as
+                    | PredefinedSelector
+                    | undefined) ?? "all";
+        }
+
         setOverrides(
             (component.colorOverrides || []).map((o) =>
                 o.id === overrideId ? { ...o, selector: nextSelector } : o,
@@ -422,6 +471,7 @@ export function ColorOverridesSection({
                             onChange={(mode) =>
                                 handleColorOverrideSelectorModeChange(
                                     override.id,
+                                    index,
                                     mode,
                                 )
                             }

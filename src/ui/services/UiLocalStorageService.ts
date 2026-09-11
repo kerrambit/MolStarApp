@@ -36,6 +36,8 @@ const PREFIX = {
         "view-builder-structure-component-tooltips-and-labels-section",
     VIEW_BUILDER_STRUCTURE_COMPONENT_TRANSFORM_SECTION:
         "view-builder-structure-component-transform-section-",
+    VIEW_BUILDER_STRUCTURE_COMPONENT_CACHE:
+        "view-builder-structure-component-cache-",
     VIEW_BUILDER_FILTER_SECTION: "view-builder-asset-filter-section-",
     VIEW_BUILDER_FILTERS: "view-builder-asset-filters-",
     VIEW_BUILDER_FOLDER: "view-builder-asset-folders-",
@@ -437,6 +439,41 @@ export const UiLocalStorageService = {
             localStorage.setItem(
                 `${PREFIX.VIEW_BUILDER_STRUCTURE_COMPONENT_REPRESENTATION_SECTION}${viewKey}-${assetId}-${componentId}`,
                 String(expanded),
+            );
+        },
+
+        getStructureComponentCache: (
+            assetId: string,
+            viewKey: string,
+            componentId: string,
+        ): Record<string, unknown> => {
+            const value = localStorage.getItem(
+                `${PREFIX.VIEW_BUILDER_STRUCTURE_COMPONENT_CACHE}${viewKey}-${assetId}-${componentId}`,
+            );
+            if (!value) return {};
+
+            try {
+                return JSON.parse(value) as Record<string, unknown>;
+            } catch (error) {
+                pushErrorNotification(
+                    `Internal error occured concerning reading the stored UI state!`,
+                );
+                loggerUi.error(
+                    `Failed to parse structure component cache from localStorage! Details: <${error}>.`,
+                );
+                return {};
+            }
+        },
+
+        setStructureComponentCache: (
+            assetId: string,
+            viewKey: string,
+            componentId: string,
+            cache: Record<string, unknown>,
+        ): void => {
+            localStorage.setItem(
+                `${PREFIX.VIEW_BUILDER_STRUCTURE_COMPONENT_CACHE}${viewKey}-${assetId}-${componentId}`,
+                JSON.stringify(cache),
             );
         },
 

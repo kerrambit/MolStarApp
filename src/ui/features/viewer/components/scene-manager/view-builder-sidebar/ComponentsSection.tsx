@@ -209,6 +209,8 @@ export function ComponentsSection({
 
                 <ComponentSelectorSection
                     component={currentComponent}
+                    assetId={asset.id}
+                    viewKey={viewKey}
                     onUpdateStructureComponentParam={
                         onUpdateStructureComponentParam
                     }
@@ -234,6 +236,8 @@ export function ComponentsSection({
                     <ComponentRepresentationSection
                         component={currentComponent}
                         activeComponentId={activeComponentId}
+                        assetId={asset.id}
+                        viewKey={viewKey}
                         onUpdateStructureComponentParam={
                             onUpdateStructureComponentParam
                         }

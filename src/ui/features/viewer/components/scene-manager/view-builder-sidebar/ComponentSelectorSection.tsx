@@ -27,11 +27,18 @@ import {
     SELECTOR_EXPRESSION_FIELDS,
     type UpdateComponentParam,
 } from "./structureTabHelpers";
+import { useStructureComponentCache } from "../../../hooks/useStructureComponentCache";
 
 type ComponentSelectorType = "PredefinedSelector" | "ExpressionSelector";
 
+// Cache keys for stashing the selector of the mode being switched away from.
+const PREDEFINED_SELECTOR_CACHE_KEY = "selepredefined";
+const EXPRESSION_SELECTOR_CACHE_KEY = "seleexpression";
+
 type ComponentSelectorSectionProps = {
     component?: ComponentEntry;
+    assetId: string;
+    viewKey: string;
     onUpdateStructureComponentParam: UpdateComponentParam;
 };
 
@@ -40,8 +47,38 @@ type ComponentSelectorSectionProps = {
  */
 export function ComponentSelectorSection({
     component,
+    assetId,
+    viewKey,
     onUpdateStructureComponentParam,
 }: ComponentSelectorSectionProps) {
+    // Stash/restore the selector when switching between the two modes.
+    const { readCache, writeCache } = useStructureComponentCache(
+        assetId,
+        viewKey,
+        component?.id,
+    );
+
+    const handleSelectorModeChange = (value: ComponentSelectorType) => {
+        if (!component) return;
+        const currentIsPredefined = typeof component.selector === "string";
+        if (value === "PredefinedSelector") {
+            if (currentIsPredefined) return;
+            // Stash the expression selector and restore the predefined one.
+            writeCache(EXPRESSION_SELECTOR_CACHE_KEY, component.selector);
+            const cached = readCache(PREDEFINED_SELECTOR_CACHE_KEY);
+            setSelector(
+                (cached as PredefinedSelector | undefined) ?? "all",
+                true,
+            );
+        } else {
+            if (!currentIsPredefined) return;
+            // Stash the predefined selector and restore the expression one.
+            writeCache(PREDEFINED_SELECTOR_CACHE_KEY, component.selector);
+            const cached = readCache(EXPRESSION_SELECTOR_CACHE_KEY);
+            setSelector((cached as Selector | undefined) ?? {}, true);
+        }
+    };
+
     const currentExpressions: SelectorExpression[] =
         component && !isPredefinedSelector(component.selector)
             ? Array.isArray(component.selector)
@@ -188,11 +225,7 @@ export function ComponentSelectorSection({
                         ? "PredefinedSelector"
                         : "ExpressionSelector"
                 }
-                onChange={(value) => {
-                    const nextSelector: Selector =
-                        value === "PredefinedSelector" ? "all" : {};
-                    setSelector(nextSelector, true);
-                }}
+                onChange={handleSelectorModeChange}
                 data={[
                     {
                         label: "Predefined selector",

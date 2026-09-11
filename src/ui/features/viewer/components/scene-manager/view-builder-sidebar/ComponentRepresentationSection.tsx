@@ -26,10 +26,18 @@ import {
     type UpdateComponentFields,
     type UpdateComponentParam,
 } from "./structureTabHelpers";
+import { useStructureComponentCache } from "../../../hooks/useStructureComponentCache";
+
+// Cache keys for stashing the color-mode state being switched away from.
+const COLOR_CACHE_KEY = "colorplain";
+const COLOR_FROM_URI_CACHE_KEY = "colorfromuri";
+const COLOR_FROM_SOURCE_CACHE_KEY = "colorfromsource";
 
 type ComponentRepresentationSectionProps = {
     component?: ComponentEntry;
     activeComponentId?: string;
+    assetId: string;
+    viewKey: string;
     onUpdateStructureComponentParam: UpdateComponentParam;
     onUpdateStructureComponentFields: UpdateComponentFields;
 };
@@ -41,9 +49,95 @@ type ComponentRepresentationSectionProps = {
 export function ComponentRepresentationSection({
     component,
     activeComponentId,
+    assetId,
+    viewKey,
     onUpdateStructureComponentParam,
     onUpdateStructureComponentFields,
 }: ComponentRepresentationSectionProps) {
+    // Stash/restore the color-mode state when switching between the modes.
+    const { readCache, writeCache } = useStructureComponentCache(
+        assetId,
+        viewKey,
+        component?.id,
+    );
+
+    const handleColorModeChange = (value: ComponenentEntryColorProperty) => {
+        if (!component) return;
+        const currentMode = getActiveColorProperty(component);
+        if (value === currentMode) return;
+
+        // Stash whatever belongs to the mode being left.
+        if (currentMode === "Color") {
+            writeCache(COLOR_CACHE_KEY, {
+                color: component.color,
+                colorOverrides: component.colorOverrides,
+            });
+        } else if (currentMode === "Color from URI") {
+            writeCache(COLOR_FROM_URI_CACHE_KEY, component.color_from_uri);
+        } else if (currentMode === "Color from source") {
+            writeCache(
+                COLOR_FROM_SOURCE_CACHE_KEY,
+                component.color_from_source,
+            );
+        }
+
+        // Restore whatever was cached for the mode being entered.
+        if (value === "Color") {
+            const cached = readCache(COLOR_CACHE_KEY) as
+                | {
+                      color?: string;
+                      colorOverrides?: ComponentEntry["colorOverrides"];
+                  }
+                | undefined;
+            onUpdateStructureComponentFields(
+                component.id,
+                {
+                    color: cached?.color ?? "#ffffff",
+                    colorOverrides: cached?.colorOverrides,
+                    color_from_uri: undefined,
+                    color_from_source: undefined,
+                },
+                true,
+            );
+        } else if (value === "Color from URI") {
+            const cached = readCache(COLOR_FROM_URI_CACHE_KEY) as
+                | ComponentEntry["color_from_uri"]
+                | undefined;
+            onUpdateStructureComponentFields(
+                component.id,
+                {
+                    color: undefined as any,
+                    colorOverrides: [],
+                    color_from_uri: cached ?? {
+                        uri: "",
+                        format: "json",
+                        schema: "whole_structure",
+                    },
+                    color_from_source: undefined,
+                },
+                false,
+            );
+        } else if (value === "Color from source") {
+            const cached = readCache(COLOR_FROM_SOURCE_CACHE_KEY) as
+                | ComponentEntry["color_from_source"]
+                | undefined;
+            onUpdateStructureComponentFields(
+                component.id,
+                {
+                    color: undefined as any,
+                    colorOverrides: [],
+                    color_from_source: cached ?? {
+                        category_name: "",
+                        field_name: "",
+                        schema: "whole_structure",
+                    },
+                    color_from_uri: undefined,
+                },
+                false,
+            );
+        }
+    };
+
     // Render the component.
     return (
         <AssetBuilderCardSectionGroup>
@@ -82,50 +176,7 @@ export function ComponentRepresentationSection({
                     orientation="vertical"
                     size={"xs"}
                     value={getActiveColorProperty(component)}
-                    onChange={(value) => {
-                        if (!component) return;
-                        if (value === "Color") {
-                            onUpdateStructureComponentFields(
-                                component.id,
-                                {
-                                    color: component.color || "#ffffff",
-                                    color_from_uri: undefined,
-                                    color_from_source: undefined,
-                                },
-                                true,
-                            );
-                        } else if (value === "Color from URI") {
-                            onUpdateStructureComponentFields(
-                                component.id,
-                                {
-                                    color: undefined as any,
-                                    colorOverrides: [],
-                                    color_from_uri: {
-                                        uri: "",
-                                        format: "json",
-                                        schema: "whole_structure",
-                                    },
-                                    color_from_source: undefined,
-                                },
-                                false,
-                            );
-                        } else if (value === "Color from source") {
-                            onUpdateStructureComponentFields(
-                                component.id,
-                                {
-                                    color: undefined as any,
-                                    colorOverrides: [],
-                                    color_from_source: {
-                                        category_name: "",
-                                        field_name: "",
-                                        schema: "whole_structure",
-                                    },
-                                    color_from_uri: undefined,
-                                },
-                                false,
-                            );
-                        }
-                    }}
+                    onChange={handleColorModeChange}
                     data={[
                         { label: "Color", value: "Color" },
                         {
@@ -174,6 +225,8 @@ export function ComponentRepresentationSection({
                     {component && (
                         <ColorOverridesSection
                             component={component}
+                            assetId={assetId}
+                            viewKey={viewKey}
                             onUpdateStructureComponentParam={
                                 onUpdateStructureComponentParam
                             }
