@@ -23,6 +23,7 @@ import type {
     UpdateComponentParam,
 } from "./structureTabHelpers";
 import { ComponentEntryTabContent } from "./ComponentEntryTabContent";
+import { useAppearance } from "../../../../../hooks/useAppearance";
 
 type ComponentsSectionProps = {
     viewKey: string;
@@ -48,6 +49,9 @@ export function ComponentsSection({
     onAddStructureComponent,
     onDeleteStructureComponent,
 }: ComponentsSectionProps) {
+    // Use apperance.
+    const colorScheme = useAppearance().colorScheme;
+
     // Active component tab; falls back to the first available component.
     const [currentComponentId, setCurrentComponentId] = useState<
         string | undefined
@@ -155,6 +159,11 @@ export function ComponentsSection({
             <AssetBuilderCardSectionGroup divider={false}>
                 <Tabs
                     value={activeComponentId || null}
+                    color={
+                        colorScheme === "dark"
+                            ? "var(--mantine-primary-color-7)"
+                            : "var(--mantine-primary-color-5)"
+                    }
                     onChange={(value) => {
                         if (!value) {
                             return;
