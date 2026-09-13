@@ -469,6 +469,7 @@ export function getStructureNode(
             componentNode.focus({
                 direction: comp.focus_direction,
                 up: comp.focus_up,
+                radius_factor: comp.radius_factor,
             });
         }
 
@@ -720,6 +721,7 @@ function readComponentEntry(
                 entry.focus_direction = child.params.direction;
             if (Array.isArray(child.params?.up))
                 entry.focus_up = child.params.up;
+            entry.radius_factor = child.params.radius_factor;
         }
 
         if (child.kind === "transform" && child.params) {

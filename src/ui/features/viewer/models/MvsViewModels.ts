@@ -178,6 +178,7 @@ export interface ComponentEntry {
     show_focus: boolean;
     focus_direction: [number, number, number];
     focus_up: [number, number, number];
+    radius_factor: number;
 
     // --- Inline label/tooltip only — no *_from_uri/*_from_source at component level ---
     label: string;
@@ -243,6 +244,7 @@ export function createDefaultComponentEntry(
         show_focus: false,
         focus_direction: [0, 0, -1],
         focus_up: [0, 1, 0],
+        radius_factor: 1.0,
         label: "",
         tooltip: "",
         translationX: 0,

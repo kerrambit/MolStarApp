@@ -4,7 +4,7 @@
  * @author Marek Eibel
  */
 
-import { Checkbox } from "@mantine/core";
+import { Checkbox, NumberInput } from "@mantine/core";
 import type { ComponentEntry } from "../../../../models/MvsViewModels";
 import { AssetBuilderCardSectionGroup } from "../AssetBuilderCardSectionGroup";
 import { FocusControls } from "../FocusControls";
@@ -45,6 +45,44 @@ export function ComponentFocusSection({
                 enable={component?.show_focus ?? false}
                 component={component}
                 onUpdateParam={onUpdateStructureComponentParam}
+            />
+            <NumberInput
+                label="Radius factor"
+                value={component?.radius_factor}
+                step={0.1}
+                min={0.0}
+                size="xs"
+                onChange={(val) =>
+                    typeof val === "number" &&
+                    activeComponentId &&
+                    onUpdateStructureComponentParam(
+                        activeComponentId,
+                        "radius_factor",
+                        val,
+                        false,
+                    )
+                }
+                onBlur={() =>
+                    activeComponentId &&
+                    component &&
+                    onUpdateStructureComponentParam(
+                        activeComponentId,
+                        "radius_factor",
+                        component.radius_factor,
+                        true,
+                    )
+                }
+                onKeyDown={(e) =>
+                    e.key === "Enter" &&
+                    activeComponentId &&
+                    component &&
+                    onUpdateStructureComponentParam(
+                        activeComponentId,
+                        "radius_factor",
+                        component.radius_factor,
+                        true,
+                    )
+                }
             />
         </AssetBuilderCardSectionGroup>
     );
