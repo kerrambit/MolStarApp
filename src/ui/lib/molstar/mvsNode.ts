@@ -555,7 +555,10 @@ export function getVolumeNode(
 
     const downloaded = builder.download({ url: assetId });
     const parsed = downloaded.parse({ format: viewModel.format as any });
-    const volumeNode = parsed.volume({});
+    const volumeNodeParams = viewModel.channel_id
+        ? { channel_id: viewModel.channel_id }
+        : {};
+    const volumeNode = parsed.volume(volumeNodeParams);
 
     const hasTransform =
         viewModel.translationX !== 0 ||
@@ -857,6 +860,9 @@ export function getVolumeViewModel(
         if (currentInBranch) {
             if (node.kind === "parse" && node.params?.format !== undefined)
                 params.format = node.params.format;
+
+            if (node.kind === "volume" && node.params?.channel_id !== undefined)
+                params.channel_id = node.params.channel_id;
 
             if (node.kind === "volume_representation" && node.params) {
                 if (node.params.type !== undefined)

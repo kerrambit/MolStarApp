@@ -13,14 +13,15 @@ import {
     Group,
     NumberInput,
     Select,
+    TextInput,
 } from "@mantine/core";
 import type { VolumeViewModel } from "../../../../models/MvsViewModels";
 import { CollapseTrigger } from "../../../../../../components/common/collapse-trigger/CollapseTriger";
 import { getAllParserTypes } from "../../../../../../config/assetsDefinitions";
 import { pushWarningNotification } from "../../../../../../services/NotificationService";
-import  { UiLocalStorageService } from "../../../../../../services/UiLocalStorageService";
+import { UiLocalStorageService } from "../../../../../../services/UiLocalStorageService";
 import { AssetBuilderCardSectionGroup } from "../AssetBuilderCardSectionGroup";
-import  { VolumeTransformControls } from "./VolumeTransformControls";
+import { VolumeTransformControls } from "./VolumeTransformControls";
 
 type VolumeTabProps = {
     viewKey: string;
@@ -94,6 +95,34 @@ export function VolumeTab({
                         value={viewModel.format}
                         placeholder="N/A"
                         size="xs"
+                    />
+                    <TextInput
+                        label={"Channel ID"}
+                        value={viewModel.channel_id || undefined}
+                        placeholder="No channel ID assigned."
+                        size="xs"
+                        onChange={(e) =>
+                            onUpdateParam(
+                                "channel_id",
+                                e.currentTarget.value,
+                                false,
+                            )
+                        }
+                        onBlur={() =>
+                            onUpdateParam(
+                                "channel_id",
+                                viewModel.channel_id,
+                                true,
+                            )
+                        }
+                        onKeyDown={(e) =>
+                            e.key === "Enter" &&
+                            onUpdateParam(
+                                "channel_id",
+                                viewModel.channel_id,
+                                true,
+                            )
+                        }
                     />
                     <Select
                         label="Type"

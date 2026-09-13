@@ -332,6 +332,7 @@ export const DEFAULT_STRUCTURE_VIEW_MODEL: StructureViewModel = {
 export interface VolumeViewModel {
     format: string;
     type: string;
+    channel_id: string;
     relative_isovalue: number;
     show_wireframe: boolean;
     show_faces: boolean;
@@ -348,6 +349,7 @@ export interface VolumeViewModel {
 export const DEFAULT_VOLUME_VIEW_MODEL: VolumeViewModel = {
     format: "N/A",
     type: "isosurface",
+    channel_id: "",
     relative_isovalue: 1.0,
     show_wireframe: false,
     show_faces: true,
